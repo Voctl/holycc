@@ -34,6 +34,36 @@ No TempleOS internals. No ring 0. No biblical references.
 
 ---
 
+## &sect; In Memoriam
+
+<p align="center">
+  <img src="docs/terry.jpg" alt="Terry A. Davis" width="380">
+</p>
+
+HolyC is the language created by **Terry A. Davis** (1969&ndash;2018) as
+the systems programming language for TempleOS &mdash; an operating system
+he built, entirely alone, from scratch, as an act of devotion.
+
+`holycc` exists to carry that language forward. Not the operating system,
+not the ring-0 architecture &mdash; but the *language itself*. A simple,
+clean, expressive systems language that deserves to live beyond its
+original home.
+
+This project is a tribute. We reimplement with respect, ship with
+care, and release as free software &mdash; so that HolyC remains in
+the commons, forever.
+
+> *"An operating system is a work of art."*  
+> &mdash; Terry A. Davis  
+> *"Also it runs in ring 0 and has 640x480 VGA."*  
+> &mdash; Also Terry A. Davis, probably
+
+> *"I'm not a compiler developer, I just wrote a HolyC transpiler
+>   because someone had to and it wasn't going to be me, but here we are."*  
+> &mdash; The authors
+
+---
+
 ## &sect; Quick Start
 
 ```bash
@@ -245,34 +275,4 @@ See [this](https://stallman.org/) for whatever RMS is doing today.
 >   a freedom-compatible WiFi card that he had to source from
 >   a guy in Finland
 
----
 
-## &sect; In Memoriam
-
-<p align="center">
-  <img src="docs/terry.jpg" alt="Terry A. Davis" width="380">
-</p>
-
-HolyC is the language created by **Terry A. Davis** (1969&ndash;2018) as
-the systems programming language for TempleOS &mdash; an operating system
-he built, entirely alone, from scratch, as an act of devotion.
-
-`holycc` exists to carry that language forward. Not the operating system,
-not the ring-0 architecture &mdash; but the *language itself*. A simple,
-clean, expressive systems language that deserves to live beyond its
-original home.
-
-This project is a tribute. We reimplement with respect, ship with
-care, and release as free software &mdash; so that HolyC remains in
-the commons, forever.
-
-> *"An operating system is a work of art."*  
-> &mdash; Terry A. Davis  
-> *"Also it runs in ring 0 and has 640x480 VGA."*  
-> &mdash; Also Terry A. Davis, probably
-
----
-
-> *"I'm not a compiler developer, I just wrote a HolyC transpiler
->   because someone had to and it wasn't going to be me, but here we are."*  
-> &mdash; The authors
