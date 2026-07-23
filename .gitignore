@@ -30,3 +30,6 @@ Thumbs.db
 # Compiled binaries
 holycc
 build_san/
+build_asan/
+build_debug/
+build_final/
