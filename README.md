@@ -30,7 +30,7 @@ on actual modern Linux machines without sacrificing your firstborn
 to the VGA gods.
 
 No TempleOS internals. No ring 0. No biblical references.  
-**Just a compilet that works.**
+**Just a compiler that works.**
 
 ---
 
@@ -68,10 +68,9 @@ return 0;
 // Functions need no forward decls:
 I64 Square(I64 x) { return x * x; }
 
-// String auto-prints:
+// String auto-prints directly:
 "25 squared = ";
-Square(5);
-"\n";
+Print("%lld\n", Square(5));
 ```
 
 ```c
@@ -85,7 +84,7 @@ SayHello;
 if (13 <= age < 20)
     "Teen-ager\n";
 
-// Switch with implicit cases:
+// Switch with implicit + range cases:
 switch (x) {
     case:  "zero\n";  break;
     case:  "one\n";   break;   // auto-increments
@@ -114,20 +113,41 @@ class Vec2 {
     F64 y;
     F64 Length() { return sqrt(x*x + y*y); }
 };
+
+// Methods are called as ClassName_MethodName(&instance):
+Vec2 v;
+v.x = 3.0; v.y = 4.0;
+Print("len = %f\n", Vec2_Length(&v));
 ```
 
 ```c
-// try/catch/throw:
+// try/catch/throw (uses setjmp/longjmp):
 try {
-    throw;
+    "trying...\n";
+    if (error) throw;
+    "this won't print if throw\n";
 } catch {
-    "caught!\n";
+    "caught error!\n";
 }
+```
+
+```c
+// Color literals in strings (stripped from output):
+"$FF$red text$FG$ normal\n";
+
+// U0 (procedure, void):
+U0 Log() { "logged\n"; }
+
+// offset keyword:
+offset(Vec2.y);   // byte offset of field y in Vec2
 ```
 
 All runtime functions (`Print`, `MAlloc`, `StrLen`, `CDelay`, etc.)
 are built-in. No imports, no ceremony. RMS would be proud of how
 clean this is (after he finishes ranting about proprietary software).
+
+Note: HolyC does NOT have `continue` — use `goto` instead.
+The compiler warns if you use it.
 
 ---
 
@@ -249,10 +269,10 @@ Usage: holycc [options] <input.HC>
 
 Options:
   -o <file>        Output file
-  -c, --emit-c     Emit C only, keep .c file
+  -c, --emit-c     Emit C only (keeps .c in /tmp/)
   --compile        Compile to executable (default)
   --run            Compile and run immediately
-  --keep-c         Keep generated .c file
+  --keep-c         Keep generated .c file in /tmp/
   --tokens         Dump token stream
   --ast            Dump AST tree
   --help           Show this message
@@ -273,17 +293,6 @@ Parser, semantic, and codegen test suites coming soon.
 Yes, we know. We'll get there. RMS doesn't believe in deadlines anyway.
 
 ---
-
-## &sect; Roadmap
-
-See [ROADMAP.md](ROADMAP.md) for planned features.
-
-Short version:
-- More test suites (parser, semantic, codegen)
-- Fuzzer
-- Better error messages
-- LSP server maybe
-- Full HolyC spec coverage
 
 ---
 
