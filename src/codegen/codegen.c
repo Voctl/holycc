@@ -87,7 +87,13 @@ static void codegen_emit_runtime_protos(CodeGen *cg) {
         "double AtoF(const char *str);\n"
         "void MemSet(uint8_t *dst, uint8_t value, uint64_t count);\n"
         "void MemCpy(uint8_t *dst, const uint8_t *src, uint64_t count);\n"
-        "int64_t MemCompare(const uint8_t *a, const uint8_t *b, uint64_t count);\n\n"
+        "int64_t MemCompare(const uint8_t *a, const uint8_t *b, uint64_t count);\n"
+        "uint64_t MSize(void *ptr);\n"
+        "void CDelay(uint64_t ms);\n"
+        "int GetCh(void);\n"
+        "void PutChar(char c);\n"
+        "void Exit(int64_t code);\n"
+        "int SPrint(char *buf, const char *fmt, ...);\n\n"
     );
 }
 

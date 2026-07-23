@@ -21,4 +21,11 @@ void MemSet(uint8_t *dst, uint8_t value, uint64_t count);
 void MemCpy(uint8_t *dst, const uint8_t *src, uint64_t count);
 int64_t MemCompare(const uint8_t *a, const uint8_t *b, uint64_t count);
 
+uint64_t MSize(void *ptr);
+void CDelay(uint64_t ms);
+int GetCh(void);
+void PutChar(char c);
+void Exit(int64_t code);
+int SPrint(char *buf, const char *fmt, ...);
+
 #endif

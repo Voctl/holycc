@@ -12,8 +12,7 @@ AstNode *ast_node_create(AstKind kind, SourceLocation loc) {
 
 void ast_node_destroy(AstNode *node) {
     if (!node) return;
-    if (node->kind == AST_STRING_LITERAL || node->kind == AST_CHAR_LITERAL ||
-        node->kind == AST_IDENTIFIER) {
+    if (node->kind == AST_STRING_LITERAL || node->kind == AST_IDENTIFIER) {
         free((void *)node->data.string_value);
     }
     free(node);

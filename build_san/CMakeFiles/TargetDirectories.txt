@@ -1,0 +1,12 @@
+/home/devuan/projects/holyc/build_san/CMakeFiles/edit_cache.dir
+/home/devuan/projects/holyc/build_san/CMakeFiles/rebuild_cache.dir
+/home/devuan/projects/holyc/build_san/src/CMakeFiles/holyc_core.dir
+/home/devuan/projects/holyc/build_san/src/CMakeFiles/holycc.dir
+/home/devuan/projects/holyc/build_san/src/CMakeFiles/edit_cache.dir
+/home/devuan/projects/holyc/build_san/src/CMakeFiles/rebuild_cache.dir
+/home/devuan/projects/holyc/build_san/tests/CMakeFiles/test_lexer.dir
+/home/devuan/projects/holyc/build_san/tests/CMakeFiles/edit_cache.dir
+/home/devuan/projects/holyc/build_san/tests/CMakeFiles/rebuild_cache.dir
+/home/devuan/projects/holyc/build_san/runtime/CMakeFiles/holyc_runtime.dir
+/home/devuan/projects/holyc/build_san/runtime/CMakeFiles/edit_cache.dir
+/home/devuan/projects/holyc/build_san/runtime/CMakeFiles/rebuild_cache.dir
