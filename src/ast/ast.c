@@ -115,6 +115,12 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_STRUCT_FIELD]          = "struct_field",
     [AST_DEFINE]                = "define",
     [AST_INCLUDE]               = "include",
+    [AST_PP_IF]                 = "pp_if",
+    [AST_PP_ELSE]               = "pp_else",
+    [AST_PP_ENDIF]              = "pp_endif",
+    [AST_PP_IFDEF]              = "pp_ifdef",
+    [AST_PP_IFNDEF]             = "pp_ifndef",
+    [AST_PP_ELIF]               = "pp_elif",
 };
 
 AstNode *ast_clone_node(const AstNode *node) {
@@ -154,6 +160,13 @@ bool ast_kind_is_declaration(AstKind kind) {
         case AST_ENUM_DECL:
         case AST_VAR_DECL:
         case AST_DEFINE:
+        case AST_INCLUDE:
+        case AST_PP_IF:
+        case AST_PP_ELSE:
+        case AST_PP_ENDIF:
+        case AST_PP_IFDEF:
+        case AST_PP_IFNDEF:
+        case AST_PP_ELIF:
             return true;
         default:
             return false;

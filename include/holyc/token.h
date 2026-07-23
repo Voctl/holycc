@@ -127,6 +127,15 @@ typedef enum {
     TOK_KW_OFFSET,
     TOK_KW_NO_WARN,
 
+    TOK_KW_HAS,
+
+    TOK_PP_IF,
+    TOK_PP_ELSE,
+    TOK_PP_ENDIF,
+    TOK_PP_IFDEF,
+    TOK_PP_IFNDEF,
+    TOK_PP_ELIF,
+
     TOK_COUNT
 } TokenKind;
 

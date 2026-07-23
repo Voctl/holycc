@@ -347,28 +347,39 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 child = child->next;
             }
 
-            child = node->first_child;
-            while (child) {
-                if (ast_kind_is_declaration(child->kind)) {
-                    codegen_emit_stmt(cg, child);
-                }
-                child = child->next;
-            }
-
             if (has_top_stmts && !has_explicit_main) {
-                string_buffer_append_cstr(&cg->buf, "\nint main() {\n");
-                cg->indent_level++;
+                bool in_main = false;
                 child = node->first_child;
                 while (child) {
-                    if (!ast_kind_is_declaration(child->kind)) {
+                    if (ast_kind_is_declaration(child->kind)) {
+                        if (in_main) {
+                            codegen_emit_indent(cg);
+                            codegen_emit_stmt(cg, child);
+                        } else {
+                            codegen_emit_stmt(cg, child);
+                        }
+                    } else {
+                        if (!in_main) {
+                            string_buffer_append_cstr(&cg->buf, "\nint main() {\n");
+                            cg->indent_level++;
+                            in_main = true;
+                        }
                         codegen_emit_indent(cg);
                         codegen_emit_stmt(cg, child);
                     }
                     child = child->next;
                 }
-                cg->indent_level--;
-                codegen_emit_indent(cg);
-                string_buffer_append_cstr(&cg->buf, "}\n");
+                if (in_main) {
+                    cg->indent_level--;
+                    codegen_emit_indent(cg);
+                    string_buffer_append_cstr(&cg->buf, "}\n");
+                }
+            } else {
+                child = node->first_child;
+                while (child) {
+                    codegen_emit_stmt(cg, child);
+                    child = child->next;
+                }
             }
             break;
         }
@@ -767,6 +778,18 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 string_buffer_append_char(&cg->buf, ' ');
                 codegen_emit_expr(cg, value_node);
             }
+            string_buffer_append_char(&cg->buf, '\n');
+            break;
+        }
+
+        case AST_PP_IF:
+        case AST_PP_IFDEF:
+        case AST_PP_IFNDEF:
+        case AST_PP_ELSE:
+        case AST_PP_ELIF:
+        case AST_PP_ENDIF: {
+            AstNode *text = node->first_child;
+            string_buffer_append_cstr(&cg->buf, text->data.string_value);
             string_buffer_append_char(&cg->buf, '\n');
             break;
         }

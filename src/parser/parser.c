@@ -981,6 +981,46 @@ static AstNode *parser_parse_top_level(Parser *p) {
             return def;
         }
 
+        case TOK_PP_IF:
+        case TOK_PP_IFDEF:
+        case TOK_PP_IFNDEF: {
+            AstNode *node = parser_make_node(p,
+                p->current.kind == TOK_PP_IF ? AST_PP_IF :
+                p->current.kind == TOK_PP_IFDEF ? AST_PP_IFDEF : AST_PP_IFNDEF);
+            AstNode *text = parser_make_node(p, AST_STRING_LITERAL);
+            text->data.string_value = strndup(p->current.start, p->current.length);
+            ast_add_child(node, text);
+            parser_advance(p);
+            return node;
+        }
+
+        case TOK_PP_ELSE: {
+            AstNode *node = parser_make_node(p, AST_PP_ELSE);
+            AstNode *text = parser_make_node(p, AST_STRING_LITERAL);
+            text->data.string_value = strndup(p->current.start, p->current.length);
+            ast_add_child(node, text);
+            parser_advance(p);
+            return node;
+        }
+
+        case TOK_PP_ELIF: {
+            AstNode *node = parser_make_node(p, AST_PP_ELIF);
+            AstNode *text = parser_make_node(p, AST_STRING_LITERAL);
+            text->data.string_value = strndup(p->current.start, p->current.length);
+            ast_add_child(node, text);
+            parser_advance(p);
+            return node;
+        }
+
+        case TOK_PP_ENDIF: {
+            AstNode *node = parser_make_node(p, AST_PP_ENDIF);
+            AstNode *text = parser_make_node(p, AST_STRING_LITERAL);
+            text->data.string_value = strndup(p->current.start, p->current.length);
+            ast_add_child(node, text);
+            parser_advance(p);
+            return node;
+        }
+
         default:
             if (parser_is_type_keyword(p->current.kind) ||
                 p->current.kind == TOK_KW_STATIC ||

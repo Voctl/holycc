@@ -106,6 +106,13 @@ static const TokenInfo token_table[TOK_COUNT] = {
     T(TOK_KW_PRIVATE,         "private",              "private"),
     T(TOK_KW_OFFSET,          "offset",               "offset"),
     T(TOK_KW_NO_WARN,         "no_warn",              "no_warn"),
+    T(TOK_KW_HAS,             "has",                  "has"),
+    T(TOK_PP_IF,              "#if",                  "#if"),
+    T(TOK_PP_ELSE,            "#else",                "#else"),
+    T(TOK_PP_ENDIF,           "#endif",               "#endif"),
+    T(TOK_PP_IFDEF,           "#ifdef",               "#ifdef"),
+    T(TOK_PP_IFNDEF,          "#ifndef",              "#ifndef"),
+    T(TOK_PP_ELIF,            "#elif",                "#elif"),
 #undef T
 };
 

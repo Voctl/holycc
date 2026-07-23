@@ -55,6 +55,7 @@ static const KeywordEntry keywords[] = {
     {"private",   7, TOK_KW_PRIVATE},
     {"offset",    6, TOK_KW_OFFSET},
     {"no_warn",   7, TOK_KW_NO_WARN},
+    {"has",       3, TOK_KW_HAS},
 };
 
 #define NUM_KEYWORDS (sizeof(keywords) / sizeof(keywords[0]))
@@ -295,8 +296,22 @@ static Token lexer_read_preprocessor(Lexer *lexer) {
     }
     size_t length = (size_t)(lexer->current - start);
     TokenKind kind = lexer_ident_kind(start + 1, length - 1);
-    if (kind == TOK_IDENTIFIER) {
-        kind = TOK_ERROR;
+    if (kind == TOK_KW_IF) {
+        while (!lexer_is_eof(lexer) && lexer_peek_char(lexer) != '\n') {
+            lexer_advance(lexer);
+        }
+        length = (size_t)(lexer->current - start);
+        kind = TOK_PP_IF;
+    } else if (kind == TOK_KW_ELSE) {
+        kind = TOK_PP_ELSE;
+    } else if (kind == TOK_IDENTIFIER) {
+        const char *text = start + 1;
+        size_t tlen = length - 1;
+        if (tlen == 5 && strncmp(text, "endif", 5) == 0) kind = TOK_PP_ENDIF;
+        else if (tlen == 5 && strncmp(text, "ifdef", 5) == 0) kind = TOK_PP_IFDEF;
+        else if (tlen == 6 && strncmp(text, "ifndef", 6) == 0) kind = TOK_PP_IFNDEF;
+        else if (tlen == 4 && strncmp(text, "elif", 4) == 0) kind = TOK_PP_ELIF;
+        else kind = TOK_ERROR;
     }
     return lexer_make_token(lexer, kind, start, length);
 }

@@ -70,6 +70,12 @@ typedef enum {
 
     AST_DEFINE,
     AST_INCLUDE,
+    AST_PP_IF,
+    AST_PP_ELSE,
+    AST_PP_ENDIF,
+    AST_PP_IFDEF,
+    AST_PP_IFNDEF,
+    AST_PP_ELIF,
 
     AST_COUNT
 } AstKind;
