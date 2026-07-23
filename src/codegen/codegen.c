@@ -3,10 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct FuncNameNode {
+    char *name;
+    struct FuncNameNode *next;
+} FuncNameNode;
+
 struct CodeGen {
     SymbolTable *symtab;
     int indent_level;
     StringBuffer buf;
+    FuncNameNode *func_names;
 };
 
 static const char *codegen_map_type_name(const char *name) {
@@ -35,6 +41,13 @@ CodeGen *codegen_create(SymbolTable *symtab) {
 
 void codegen_destroy(CodeGen *cg) {
     if (cg) {
+        FuncNameNode *n = cg->func_names;
+        while (n) {
+            FuncNameNode *next = n->next;
+            free(n->name);
+            free(n);
+            n = next;
+        }
         string_buffer_destroy(&cg->buf);
         free(cg);
     }
@@ -42,6 +55,22 @@ void codegen_destroy(CodeGen *cg) {
 
 static void codegen_emit_indent(CodeGen *cg) {
     string_buffer_indent(&cg->buf, cg->indent_level);
+}
+
+static void codegen_add_func_name(CodeGen *cg, const char *name) {
+    FuncNameNode *n = malloc(sizeof(FuncNameNode));
+    n->name = strdup(name);
+    n->next = cg->func_names;
+    cg->func_names = n;
+}
+
+static bool codegen_is_func_name(CodeGen *cg, const char *name) {
+    FuncNameNode *n = cg->func_names;
+    while (n) {
+        if (strcmp(n->name, name) == 0) return true;
+        n = n->next;
+    }
+    return false;
 }
 
 static void codegen_emit_runtime_protos(CodeGen *cg) {
@@ -279,9 +308,11 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 if (child->kind == AST_FUNC_DECL) {
                     AstNode *t = child->first_child;
                     AstNode *n = t ? t->next : NULL;
-                    if (n && n->kind == AST_IDENTIFIER &&
-                        strcmp(n->data.string_value, "main") == 0) {
-                        has_explicit_main = true;
+                    if (n && n->kind == AST_IDENTIFIER) {
+                        codegen_add_func_name(cg, n->data.string_value);
+                        if (strcmp(n->data.string_value, "main") == 0) {
+                            has_explicit_main = true;
+                        }
                     }
                 }
                 if (!ast_kind_is_declaration(child->kind)) {
@@ -589,8 +620,24 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
         }
 
         case AST_EXPR_STMT: {
-            codegen_emit_expr(cg, node->first_child);
-            string_buffer_append_cstr(&cg->buf, ";\n");
+            AstNode *expr = node->first_child;
+            if (expr && expr->kind == AST_STRING_LITERAL) {
+                string_buffer_append_cstr(&cg->buf, "Print(");
+                codegen_emit_expr(cg, expr);
+                string_buffer_append_cstr(&cg->buf, ");\n");
+            } else if (expr && expr->kind == AST_IDENTIFIER) {
+                const char *name = expr->data.string_value;
+                if (codegen_is_func_name(cg, name)) {
+                    string_buffer_append_cstr(&cg->buf, name);
+                    string_buffer_append_cstr(&cg->buf, "();\n");
+                } else {
+                    codegen_emit_expr(cg, expr);
+                    string_buffer_append_cstr(&cg->buf, ";\n");
+                }
+            } else {
+                codegen_emit_expr(cg, expr);
+                string_buffer_append_cstr(&cg->buf, ";\n");
+            }
             break;
         }
 
