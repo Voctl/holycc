@@ -1,35 +1,7 @@
-# Build
 build/
-*.o
-*.a
-*.so
-*.out
-
-# Generated C files
-examples/*.c
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Direnv
-.envrc
-.env
-
-# HolyC temp
-*.HC.c
-*.HC.o
-
-# Compiled binaries
-holycc
-build_san/
 build_asan/
 build_debug/
 build_final/
+*.o
+*.a
+*.c
