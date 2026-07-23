@@ -5,3 +5,4 @@ build_final/
 *.o
 *.a
 *.c
+build_san/
