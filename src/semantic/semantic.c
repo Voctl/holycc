@@ -256,7 +256,8 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
             }
             body = child;
 
-            Type *func_type = type_function(return_type, params, false);
+            bool variadic = (node->flags & AST_FLAG_VARIADIC) != 0;
+            Type *func_type = type_function(return_type, params, variadic);
 
             if (name) {
                 Symbol *sym = symbol_add(s->symtab, name, SYM_FUNCTION, func_type, node->loc);
@@ -498,7 +499,9 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
             break;
         }
 
-        case AST_ASM_STMT:
+        case AST_TRY_STMT:
+        case AST_CATCH_STMT:
+        case AST_THROW_STMT:
             break;
 
         default: {

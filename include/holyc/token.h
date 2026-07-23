@@ -130,6 +130,9 @@ typedef enum {
     TOK_KW_HAS,
     TOK_KW_REG,
     TOK_KW_NOREG,
+    TOK_KW_TRY,
+    TOK_KW_CATCH,
+    TOK_KW_THROW,
 
     TOK_PP_IF,
     TOK_PP_ELSE,

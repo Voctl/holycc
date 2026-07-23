@@ -118,7 +118,16 @@ static AstNode *parser_parse_primary(Parser *p) {
             size_t len = p->current.length;
             const char *start = p->current.start;
             if (len >= 3 && start[1] == '\\') {
-                node->data.int_value = (uint64_t)start[2];
+                switch (start[2]) {
+                    case 'n': node->data.int_value = 10; break;
+                    case 't': node->data.int_value = 9; break;
+                    case 'r': node->data.int_value = 13; break;
+                    case '0': node->data.int_value = 0; break;
+                    case '\\': node->data.int_value = '\\'; break;
+                    case '\'': node->data.int_value = '\''; break;
+                    case '"': node->data.int_value = '"'; break;
+                    default: node->data.int_value = (uint64_t)start[2]; break;
+                }
             } else if (len >= 3) {
                 node->data.int_value = (uint64_t)start[1];
             }
@@ -598,6 +607,32 @@ static AstNode *parser_parse_stmt(Parser *p) {
             }
             goto default_case;
 
+        case TOK_KW_TRY: {
+            parser_advance(p);
+            AstNode *node = parser_make_node(p, AST_TRY_STMT);
+            ast_add_child(node, parser_parse_stmt(p));
+            parser_expect(p, TOK_KW_CATCH, "catch");
+            AstNode *catch_node = parser_make_node(p, AST_CATCH_STMT);
+            if (parser_check(p, TOK_LPAREN)) {
+                parser_advance(p);
+                ast_add_child(catch_node, parser_parse_expr(p));
+                parser_expect(p, TOK_RPAREN, ")");
+            }
+            ast_add_child(catch_node, parser_parse_stmt(p));
+            ast_add_child(node, catch_node);
+            return node;
+        }
+
+        case TOK_KW_THROW: {
+            parser_advance(p);
+            AstNode *node = parser_make_node(p, AST_THROW_STMT);
+            if (!parser_check(p, TOK_SEMICOLON)) {
+                ast_add_child(node, parser_parse_expr(p));
+            }
+            parser_expect(p, TOK_SEMICOLON, ";");
+            return node;
+        }
+
         case TOK_KW_ASM:
         case TOK_KW__ASM: {
             parser_advance(p);
@@ -759,6 +794,11 @@ static AstNode *parser_parse_decl(Parser *p) {
 
         if (!parser_check(p, TOK_RPAREN)) {
             do {
+                if (parser_check(p, TOK_ELLIPSIS)) {
+                    func->flags |= AST_FLAG_VARIADIC;
+                    parser_advance(p);
+                    break;
+                }
                 AstNode *param_type = parser_parse_type(p);
                 AstNode *param = parser_make_node(p, AST_FUNC_PARAM);
                 ast_add_child(param, param_type);

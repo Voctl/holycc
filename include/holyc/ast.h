@@ -37,6 +37,9 @@ typedef enum {
 
     AST_EXPR_STMT,
     AST_ASM_STMT,
+    AST_TRY_STMT,
+    AST_CATCH_STMT,
+    AST_THROW_STMT,
 
     AST_BINARY_EXPR,
     AST_UNARY_EXPR,
@@ -85,6 +88,7 @@ typedef enum {
     AST_FLAG_CONST = 1 << 0,
     AST_FLAG_STATIC = 1 << 1,
     AST_FLAG_EXTERN = 1 << 2,
+    AST_FLAG_VARIADIC = 1 << 3,
 } AstFlags;
 
 typedef struct AstNode AstNode;

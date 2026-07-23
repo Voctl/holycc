@@ -351,9 +351,13 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
             string_buffer_append_cstr(&cg->buf, "#include <stdio.h>\n");
             string_buffer_append_cstr(&cg->buf, "#include <stdlib.h>\n");
             string_buffer_append_cstr(&cg->buf, "#include <string.h>\n");
-            string_buffer_append_cstr(&cg->buf, "#include <math.h>\n\n");
+            string_buffer_append_cstr(&cg->buf, "#include <math.h>\n");
+            string_buffer_append_cstr(&cg->buf, "#include <stdarg.h>\n");
+            string_buffer_append_cstr(&cg->buf, "#include <setjmp.h>\n\n");
 
             codegen_emit_runtime_protos(cg);
+
+            string_buffer_append_cstr(&cg->buf, "jmp_buf __holyc_jmp_buf;\n\n");
 
             AstNode *child = node->first_child;
             bool has_explicit_main = false;
@@ -451,10 +455,65 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 child = child->next;
             }
 
+            bool is_variadic = (node->flags & AST_FLAG_VARIADIC) != 0;
+            if (is_variadic) {
+                string_buffer_append_cstr(&cg->buf, ", ...");
+            }
             string_buffer_append_cstr(&cg->buf, ") ");
 
             if (child && child->kind == AST_BLOCK) {
-                codegen_emit_stmt(cg, child);
+                if (is_variadic) {
+                    string_buffer_append_cstr(&cg->buf, "{\n");
+                    cg->indent_level++;
+                    AstNode *last_param = NULL;
+                    AstNode *p = name_node ? name_node->next : NULL;
+                    while (p && p->kind == AST_FUNC_PARAM) {
+                        last_param = p;
+                        p = p->next;
+                    }
+                    if (last_param) {
+                        AstNode *pname = last_param->first_child->next;
+                        const char *last_name = (pname && pname->kind == AST_IDENTIFIER)
+                            ? pname->data.string_value : NULL;
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "uint64_t argc = 0;\n");
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "int64_t argv[64];\n");
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "va_list __va_args;\n");
+                        codegen_emit_indent(cg);
+                        string_buffer_append_fmt(&cg->buf,
+                            "va_start(__va_args, %s);\n",
+                            last_name ? last_name : "");
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "while (argc < 64) {\n");
+                        cg->indent_level++;
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "argv[argc++] = va_arg(__va_args, int64_t);\n");
+                        cg->indent_level--;
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf, "}\n");
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf,
+                            "va_end(__va_args);\n");
+                    }
+                    AstNode *body_stmt = child->first_child;
+                    while (body_stmt) {
+                        codegen_emit_indent(cg);
+                        codegen_emit_stmt(cg, body_stmt);
+                        body_stmt = body_stmt->next;
+                    }
+                    cg->indent_level--;
+                    codegen_emit_indent(cg);
+                    string_buffer_append_cstr(&cg->buf, "}\n");
+                } else {
+                    codegen_emit_stmt(cg, child);
+                }
             } else {
                 string_buffer_append_cstr(&cg->buf, ";\n");
             }
@@ -788,6 +847,49 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 codegen_emit_expr(cg, node->first_child);
             }
             string_buffer_append_cstr(&cg->buf, ";\n\n");
+            break;
+        }
+
+        case AST_TRY_STMT: {
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "{\n");
+            cg->indent_level++;
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "int __ex = setjmp(__holyc_jmp_buf);\n");
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "if (__ex == 0) {\n");
+            cg->indent_level++;
+            codegen_emit_stmt(cg, node->first_child);
+            cg->indent_level--;
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "} else {\n");
+            cg->indent_level++;
+            AstNode *catch_node = node->first_child->next;
+            if (catch_node && catch_node->kind == AST_CATCH_STMT) {
+                codegen_emit_stmt(cg, catch_node);
+            }
+            cg->indent_level--;
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "}\n");
+            cg->indent_level--;
+            codegen_emit_indent(cg);
+            string_buffer_append_cstr(&cg->buf, "}\n");
+            break;
+        }
+
+        case AST_CATCH_STMT: {
+            codegen_emit_stmt(cg, node->last_child);
+            break;
+        }
+
+        case AST_THROW_STMT: {
+            string_buffer_append_cstr(&cg->buf, "longjmp(__holyc_jmp_buf, 1");
+            if (node->first_child) {
+                string_buffer_append_cstr(&cg->buf, " + (int)(");
+                codegen_emit_expr(cg, node->first_child);
+                string_buffer_append_char(&cg->buf, ')');
+            }
+            string_buffer_append_cstr(&cg->buf, ");\n");
             break;
         }
 
