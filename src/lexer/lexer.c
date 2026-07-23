@@ -51,6 +51,10 @@ static const KeywordEntry keywords[] = {
     {"TRUE",      4, TOK_KW_TRUE},
     {"FALSE",     5, TOK_KW_FALSE},
     {"const",     5, TOK_KW_CONST},
+    {"public",    6, TOK_KW_PUBLIC},
+    {"private",   7, TOK_KW_PRIVATE},
+    {"offset",    6, TOK_KW_OFFSET},
+    {"no_warn",   7, TOK_KW_NO_WARN},
 };
 
 #define NUM_KEYWORDS (sizeof(keywords) / sizeof(keywords[0]))
@@ -333,6 +337,8 @@ Token lexer_next_token(Lexer *lexer) {
 
     switch (c) {
         case '#': return lexer_read_preprocessor(lexer);
+
+        case '`': return lexer_make_token(lexer, TOK_BACKTICK, start, 1);
 
         case '(': return lexer_make_token(lexer, TOK_LPAREN, start, 1);
         case ')': return lexer_make_token(lexer, TOK_RPAREN, start, 1);

@@ -129,11 +129,11 @@ static bool compile_c_to_binary(const char *c_file, const char *out_file) {
 
     if (runtime_lib) {
         snprintf(cmd, sizeof(cmd),
-                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" \"%s\" -o \"%s\" 2>&1",
+                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" \"%s\" -lm -o \"%s\" 2>&1",
                  c_file, runtime_lib, out_file);
     } else {
         snprintf(cmd, sizeof(cmd),
-                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" -o \"%s\" 2>&1",
+                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" -lm -o \"%s\" 2>&1",
                  c_file, out_file);
     }
 

@@ -121,6 +121,12 @@ typedef enum {
 
     TOK_KW_CONST,
 
+    TOK_BACKTICK,
+    TOK_KW_PUBLIC,
+    TOK_KW_PRIVATE,
+    TOK_KW_OFFSET,
+    TOK_KW_NO_WARN,
+
     TOK_COUNT
 } TokenKind;
 

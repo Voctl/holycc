@@ -180,13 +180,21 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
             AstNode *left = node->first_child;
             AstNode *right = left ? left->next : NULL;
 
-            string_buffer_append_char(&cg->buf, '(');
-            codegen_emit_expr(cg, left);
-            string_buffer_append_char(&cg->buf, ' ');
-            string_buffer_append_cstr(&cg->buf, token_kind_spelling(op));
-            string_buffer_append_char(&cg->buf, ' ');
-            codegen_emit_expr(cg, right);
-            string_buffer_append_char(&cg->buf, ')');
+            if (op == TOK_BACKTICK) {
+                string_buffer_append_cstr(&cg->buf, "pow(");
+                codegen_emit_expr(cg, left);
+                string_buffer_append_cstr(&cg->buf, ", ");
+                codegen_emit_expr(cg, right);
+                string_buffer_append_char(&cg->buf, ')');
+            } else {
+                string_buffer_append_char(&cg->buf, '(');
+                codegen_emit_expr(cg, left);
+                string_buffer_append_char(&cg->buf, ' ');
+                string_buffer_append_cstr(&cg->buf, token_kind_spelling(op));
+                string_buffer_append_char(&cg->buf, ' ');
+                codegen_emit_expr(cg, right);
+                string_buffer_append_char(&cg->buf, ')');
+            }
             break;
         }
 
@@ -267,6 +275,16 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
             break;
         }
 
+        case AST_OFFSET_EXPR: {
+            string_buffer_append_cstr(&cg->buf, "offsetof(");
+            codegen_emit_expr(cg, node->first_child);
+            string_buffer_append_char(&cg->buf, ',');
+            string_buffer_append_char(&cg->buf, ' ');
+            codegen_emit_expr(cg, node->first_child->next);
+            string_buffer_append_char(&cg->buf, ')');
+            break;
+        }
+
         case AST_ARRAY_INIT: {
             string_buffer_append_char(&cg->buf, '{');
             AstNode *child = node->first_child;
@@ -296,7 +314,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
             string_buffer_append_cstr(&cg->buf, "#include <stddef.h>\n");
             string_buffer_append_cstr(&cg->buf, "#include <stdio.h>\n");
             string_buffer_append_cstr(&cg->buf, "#include <stdlib.h>\n");
-            string_buffer_append_cstr(&cg->buf, "#include <string.h>\n\n");
+            string_buffer_append_cstr(&cg->buf, "#include <string.h>\n");
+            string_buffer_append_cstr(&cg->buf, "#include <math.h>\n\n");
 
             codegen_emit_runtime_protos(cg);
 

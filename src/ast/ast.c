@@ -98,6 +98,7 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_POINTER_MEMBER_EXPR]   = "pointer_member_expr",
     [AST_CAST_EXPR]             = "cast_expr",
     [AST_SIZEOF_EXPR]           = "sizeof_expr",
+    [AST_OFFSET_EXPR]           = "offset_expr",
     [AST_IDENTIFIER]            = "identifier",
     [AST_INTEGER_LITERAL]       = "integer_literal",
     [AST_FLOAT_LITERAL]         = "float_literal",
