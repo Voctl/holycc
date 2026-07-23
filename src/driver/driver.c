@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 #define HOLYCC_VERSION "0.1.0"
 
@@ -165,6 +166,12 @@ int driver_main(int argc, char **argv) {
     }
 
     Parser *parser = parser_create(lexer, &diag);
+    {
+        char *path = strdup(opts.input_file);
+        char *dir = dirname(path);
+        parser_set_sourcedir(parser, dir);
+        free(path);
+    }
     AstNode *ast = parser_parse_translation_unit(parser);
 
     if (diag.had_error) {

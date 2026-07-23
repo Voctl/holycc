@@ -18,24 +18,23 @@ not operating system compatibility.
 ## Quick Start
 
 ```bash
+# Clone
+git clone https://github.com/YOU/holycc.git && cd holycc
+
 # Build
 cmake -B build && cmake --build build
 
+# Install (adds to ~/.local/bin, sets up 'hc' alias)
+./install.sh
+
 # Compile HolyC to C
-./build/src/holycc program.HC
+holycc program.HC          # or just: hc program.HC
 
 # Compile generated C with GCC
 gcc program.c -o program
 
 # Or run directly
-./build/src/holycc program.HC -o out.c && gcc out.c -o program && ./program
-```
-
-Install globally:
-
-```bash
-sudo cmake --install build
-holycc program.HC
+holycc program.HC -o out.c && gcc out.c -o program && ./program
 ```
 
 ---
@@ -105,7 +104,7 @@ typedef struct {
 - [x] `union` / `enum`
 - [x] `asm` / `_asm` (inline assembly — comment in C)
 - [ ] `#include`
-- [ ] `#define`
+- [x] `#define` (maps to C #define)
 
 ### Expressions
 - [x] Arithmetic (`+` `-` `*` `/` `%`)

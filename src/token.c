@@ -95,6 +95,7 @@ static const TokenInfo token_table[TOK_COUNT] = {
     T(TOK_KW__ASM,            "_asm",                 "_asm"),
     T(TOK_KW_IMPORT,          "import",               "import"),
     T(TOK_KW_INCLUDE,         "#include",             "#include"),
+    T(TOK_KW_DEFINE,          "#define",              "#define"),
     T(TOK_KW_NULL,            "NULL",                 "NULL"),
     T(TOK_KW_TRUE,            "TRUE",                 "TRUE"),
     T(TOK_KW_FALSE,           "FALSE",                "FALSE"),

@@ -220,6 +220,20 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
             break;
         }
 
+        case AST_ARRAY_INIT: {
+            string_buffer_append_char(&cg->buf, '{');
+            AstNode *child = node->first_child;
+            bool first = true;
+            while (child) {
+                if (!first) string_buffer_append_cstr(&cg->buf, ", ");
+                codegen_emit_expr(cg, child);
+                first = false;
+                child = child->next;
+            }
+            string_buffer_append_char(&cg->buf, '}');
+            break;
+        }
+
         default:
             break;
     }
@@ -304,12 +318,57 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 string_buffer_append_cstr(&cg->buf, "extern ");
             }
 
-            if (type_node && type_node->kind == AST_NAMED_TYPE) {
+            if (type_node && type_node->kind == AST_FUNC_POINTER_TYPE) {
+                AstNode *return_type = type_node->first_child;
+                AstNode *fp_name = return_type ? return_type->next : NULL;
+                if (return_type && return_type->kind == AST_NAMED_TYPE) {
+                    string_buffer_append_cstr(&cg->buf, codegen_map_type_name(return_type->data.string_value));
+                }
+                string_buffer_append_cstr(&cg->buf, " (*");
+                codegen_emit_expr(cg, fp_name);
+                string_buffer_append_cstr(&cg->buf, ")(");
+                AstNode *param = fp_name ? fp_name->next : NULL;
+                bool first_param = true;
+                while (param && param->kind == AST_FUNC_PARAM) {
+                    if (!first_param) string_buffer_append_cstr(&cg->buf, ", ");
+                    AstNode *ptype = param->first_child;
+                    if (ptype && ptype->kind == AST_NAMED_TYPE) {
+                        string_buffer_append_cstr(&cg->buf, codegen_map_type_name(ptype->data.string_value));
+                    }
+                    first_param = false;
+                    param = param->next;
+                }
+                string_buffer_append_cstr(&cg->buf, ")");
+            } else if (type_node && type_node->kind == AST_NAMED_TYPE) {
                 string_buffer_append_cstr(&cg->buf, codegen_map_type_name(type_node->data.string_value));
+                string_buffer_append_char(&cg->buf, ' ');
+            } else if (type_node && type_node->kind == AST_ARRAY_TYPE) {
+                AstNode *elem_type = type_node->first_child;
+                while (elem_type && elem_type->kind == AST_ARRAY_TYPE) {
+                    elem_type = elem_type->first_child;
+                }
+                if (elem_type && elem_type->kind == AST_NAMED_TYPE) {
+                    string_buffer_append_cstr(&cg->buf, codegen_map_type_name(elem_type->data.string_value));
+                }
                 string_buffer_append_char(&cg->buf, ' ');
             }
 
-            codegen_emit_expr(cg, name_node);
+            if (type_node->kind != AST_FUNC_POINTER_TYPE) {
+                codegen_emit_expr(cg, name_node);
+            }
+
+            if (type_node && type_node->kind == AST_ARRAY_TYPE) {
+                AstNode *arr = type_node;
+                while (arr && arr->kind == AST_ARRAY_TYPE) {
+                    string_buffer_append_char(&cg->buf, '[');
+                    AstNode *size = arr->first_child->next;
+                    if (size) {
+                        codegen_emit_expr(cg, size);
+                    }
+                    string_buffer_append_char(&cg->buf, ']');
+                    arr = arr->first_child;
+                }
+            }
 
             if (init) {
                 string_buffer_append_cstr(&cg->buf, " = ");
@@ -547,6 +606,28 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 string_buffer_append_cstr(&cg->buf, " */");
             }
             string_buffer_append_cstr(&cg->buf, ";\n");
+            break;
+        }
+
+        case AST_DEFINE: {
+            AstNode *name_node = node->first_child;
+            AstNode *value_node = name_node ? name_node->next : NULL;
+            string_buffer_append_cstr(&cg->buf, "#define ");
+            codegen_emit_expr(cg, name_node);
+            if (value_node) {
+                string_buffer_append_char(&cg->buf, ' ');
+                codegen_emit_expr(cg, value_node);
+            }
+            string_buffer_append_char(&cg->buf, '\n');
+            break;
+        }
+
+        case AST_INCLUDE: {
+            AstNode *child = node->first_child->next;
+            while (child) {
+                codegen_emit_stmt(cg, child);
+                child = child->next;
+            }
             break;
         }
 

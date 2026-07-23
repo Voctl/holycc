@@ -44,6 +44,8 @@ static const KeywordEntry keywords[] = {
     {"asm",       3, TOK_KW_ASM},
     {"_asm",      4, TOK_KW__ASM},
     {"import",    6, TOK_KW_IMPORT},
+    {"include",   7, TOK_KW_INCLUDE},
+    {"define",    6, TOK_KW_DEFINE},
     {"NULL",      4, TOK_KW_NULL},
     {"TRUE",      4, TOK_KW_TRUE},
     {"FALSE",     5, TOK_KW_FALSE},
@@ -282,13 +284,14 @@ static Token lexer_read_identifier(Lexer *lexer) {
 
 static Token lexer_read_preprocessor(Lexer *lexer) {
     const char *start = lexer->current - 1;
-    while (!lexer_is_eof(lexer) && isalpha((unsigned char)lexer_peek_char(lexer))) {
+    while (!lexer_is_eof(lexer) && (isalpha((unsigned char)lexer_peek_char(lexer)) ||
+                                     lexer_peek_char(lexer) == '_')) {
         lexer_advance(lexer);
     }
     size_t length = (size_t)(lexer->current - start);
     TokenKind kind = lexer_ident_kind(start + 1, length - 1);
     if (kind == TOK_IDENTIFIER) {
-        kind = TOK_KW_INCLUDE;
+        kind = TOK_ERROR;
     }
     return lexer_make_token(lexer, kind, start, length);
 }

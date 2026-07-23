@@ -8,6 +8,7 @@
 typedef struct Parser Parser;
 
 Parser *parser_create(Lexer *lexer, Diagnostics *diag);
+void parser_set_sourcedir(Parser *parser, const char *dir);
 void parser_destroy(Parser *parser);
 
 AstNode *parser_parse_translation_unit(Parser *parser);

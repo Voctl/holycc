@@ -112,6 +112,8 @@ typedef enum {
     TOK_KW_IMPORT,
     TOK_KW_INCLUDE,
 
+    TOK_KW_DEFINE,
+
     TOK_KW_NULL,
     TOK_KW_TRUE,
     TOK_KW_FALSE,

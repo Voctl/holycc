@@ -104,12 +104,16 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_CHAR_LITERAL]          = "char_literal",
     [AST_BOOL_LITERAL]          = "bool_literal",
     [AST_NULL_LITERAL]          = "null_literal",
+    [AST_ARRAY_INIT]            = "array_init",
     [AST_ARRAY_TYPE]            = "array_type",
     [AST_POINTER_TYPE]          = "pointer_type",
+    [AST_FUNC_POINTER_TYPE]     = "func_pointer_type",
     [AST_NAMED_TYPE]            = "named_type",
     [AST_FUNC_PARAM]            = "func_param",
     [AST_ENUMERATOR]            = "enumerator",
     [AST_STRUCT_FIELD]          = "struct_field",
+    [AST_DEFINE]                = "define",
+    [AST_INCLUDE]               = "include",
 };
 
 const char *ast_kind_name(AstKind kind) {

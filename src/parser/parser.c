@@ -1,13 +1,17 @@
 #include "holyc/parser.h"
 #include "holyc/types.h"
+#include "holyc/utils.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 struct Parser {
     Lexer *lexer;
     Diagnostics *diag;
     Token current;
     Token peek;
+    char *sourcedir;
 };
 
 static void parser_advance(Parser *p) {
@@ -19,12 +23,19 @@ Parser *parser_create(Lexer *lexer, Diagnostics *diag) {
     Parser *p = calloc(1, sizeof(Parser));
     p->lexer = lexer;
     p->diag = diag;
+    p->sourcedir = NULL;
     parser_advance(p);
     parser_advance(p);
     return p;
 }
 
+void parser_set_sourcedir(Parser *parser, const char *dir) {
+    free(parser->sourcedir);
+    parser->sourcedir = dir ? strdup(dir) : NULL;
+}
+
 void parser_destroy(Parser *parser) {
+    free(parser->sourcedir);
     free(parser);
 }
 
@@ -129,6 +140,17 @@ static AstNode *parser_parse_primary(Parser *p) {
             AstNode *node = parser_make_node(p, AST_NULL_LITERAL);
             parser_advance(p);
             return node;
+        }
+        case TOK_LBRACE: {
+            AstNode *init = parser_make_node(p, AST_ARRAY_INIT);
+            parser_advance(p);
+            if (!parser_check(p, TOK_RBRACE)) {
+                do {
+                    ast_add_child(init, parser_parse_expr(p));
+                } while (parser_match(p, TOK_COMMA));
+            }
+            parser_expect(p, TOK_RBRACE, "}");
+            return init;
         }
         case TOK_LPAREN: {
             parser_advance(p);
@@ -606,11 +628,63 @@ static AstNode *parser_parse_decl(Parser *p) {
     if (!is_extern) is_extern = parser_match(p, TOK_KW__EXTERN);
 
     AstNode *type_node = parser_parse_type(p);
+
+    if (parser_check(p, TOK_LPAREN) && p->peek.kind == TOK_STAR) {
+        AstNode *fp_type = parser_make_node(p, AST_FUNC_POINTER_TYPE);
+        ast_add_child(fp_type, type_node);
+        parser_advance(p);
+        parser_advance(p);
+        Token fp_name = p->current;
+        parser_expect(p, TOK_IDENTIFIER, "function pointer name");
+        AstNode *fp_name_node = ast_node_create(AST_IDENTIFIER, fp_name.loc);
+        fp_name_node->data.string_value = strndup(fp_name.start, fp_name.length);
+        ast_add_child(fp_type, fp_name_node);
+        parser_expect(p, TOK_RPAREN, ")");
+        parser_expect(p, TOK_LPAREN, "(");
+
+        if (!parser_check(p, TOK_RPAREN)) {
+            do {
+                AstNode *ptype = parser_parse_type(p);
+                AstNode *param = parser_make_node(p, AST_FUNC_PARAM);
+                ast_add_child(param, ptype);
+                if (parser_check(p, TOK_IDENTIFIER)) {
+                    AstNode *pname = ast_node_create(AST_IDENTIFIER, p->current.loc);
+                    pname->data.string_value = strndup(p->current.start, p->current.length);
+                    ast_add_child(param, pname);
+                    parser_advance(p);
+                }
+                ast_add_child(fp_type, param);
+            } while (parser_match(p, TOK_COMMA));
+        }
+        parser_expect(p, TOK_RPAREN, ")");
+
+        AstNode *var = parser_make_node(p, AST_VAR_DECL);
+        if (is_static) var->flags |= AST_FLAG_STATIC;
+        if (is_extern) var->flags |= AST_FLAG_EXTERN;
+        ast_add_child(var, fp_type);
+        ast_add_child(var, fp_name_node);
+
+        if (parser_match(p, TOK_ASSIGN)) {
+            ast_add_child(var, parser_parse_expr(p));
+        }
+        parser_expect(p, TOK_SEMICOLON, ";");
+        return var;
+    }
+
     Token name_tok = p->current;
     parser_expect(p, TOK_IDENTIFIER, "identifier");
-
     AstNode *name = ast_node_create(AST_IDENTIFIER, name_tok.loc);
     name->data.string_value = strndup(name_tok.start, name_tok.length);
+
+    while (parser_match(p, TOK_LBRACKET)) {
+        AstNode *arr_type = parser_make_node(p, AST_ARRAY_TYPE);
+        ast_add_child(arr_type, type_node);
+        if (!parser_check(p, TOK_RBRACKET)) {
+            ast_add_child(arr_type, parser_parse_expr(p));
+        }
+        parser_expect(p, TOK_RBRACKET, "]");
+        type_node = arr_type;
+    }
 
     if (parser_check(p, TOK_LPAREN)) {
         AstNode *func = parser_make_node(p, AST_FUNC_DECL);
@@ -735,14 +809,64 @@ static AstNode *parser_parse_top_level(Parser *p) {
         case TOK_KW_INCLUDE: {
             parser_advance(p);
             if (parser_check(p, TOK_STRING)) {
-                AstNode *inc = parser_make_node(p, AST_NONE);
-                AstNode *str = parser_make_node(p, AST_STRING_LITERAL);
-                str->data.string_value = strndup(p->current.start + 1, p->current.length - 2);
-                ast_add_child(inc, str);
+                const char *filepath = strndup(p->current.start + 1, p->current.length - 2);
                 parser_advance(p);
+
+                AstNode *inc = parser_make_node(p, AST_INCLUDE);
+                AstNode *str_node = parser_make_node(p, AST_STRING_LITERAL);
+                str_node->data.string_value = filepath;
+                ast_add_child(inc, str_node);
+
+                char fullpath[1024];
+                if (p->sourcedir && filepath[0] != '/') {
+                    snprintf(fullpath, sizeof(fullpath), "%s/%s", p->sourcedir, filepath);
+                } else {
+                    snprintf(fullpath, sizeof(fullpath), "%s", filepath);
+                }
+
+                size_t len;
+                char *src = read_file(fullpath, &len);
+                if (src) {
+                    Lexer *inc_lexer = lexer_create(fullpath, src, len);
+                    Parser *inc_parser = parser_create(inc_lexer, p->diag);
+                    parser_set_sourcedir(inc_parser, p->sourcedir);
+                    AstNode *inc_ast = parser_parse_translation_unit(inc_parser);
+                    AstNode *child = inc_ast->first_child;
+                    while (child) {
+                        AstNode *next = child->next;
+                        child->next = NULL;
+                        child->parent = NULL;
+                        ast_add_child(inc, child);
+                        child = next;
+                    }
+                    inc_ast->first_child = NULL;
+                    inc_ast->last_child = NULL;
+                    ast_node_destroy_tree(inc_ast);
+                    parser_destroy(inc_parser);
+                    lexer_destroy(inc_lexer);
+                    free(src);
+                } else {
+                    p->diag->error(p->current.loc, "cannot open include file '%s'", filepath);
+                }
                 return inc;
             }
             return parser_make_node(p, AST_NONE);
+        }
+
+        case TOK_KW_DEFINE: {
+            parser_advance(p);
+            AstNode *def = parser_make_node(p, AST_DEFINE);
+            if (parser_check(p, TOK_IDENTIFIER)) {
+                AstNode *name = parser_make_node(p, AST_IDENTIFIER);
+                name->data.string_value = strndup(p->current.start, p->current.length);
+                ast_add_child(def, name);
+                parser_advance(p);
+            }
+            if (!parser_check(p, TOK_EOF) && !parser_check(p, TOK_SEMICOLON) &&
+                p->current.start[0] != '\n') {
+                ast_add_child(def, parser_parse_expr(p));
+            }
+            return def;
         }
 
         default:

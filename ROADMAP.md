@@ -6,30 +6,27 @@
 - [x] Recursive descent parser
 - [x] AST with visitor pattern
 - [x] Symbol table with lexical scopes
-- [x] Type system (I8-I64, U8-U64, F64, Bool, Char, void, pointer, array, struct, union, enum)
-- [x] Semantic analysis (undeclared vars, duplicate defs, break/continue checks)
+- [x] Type system
+- [x] Semantic analysis
 - [x] C17 code generation with type mapping
 - [x] CLI driver with --tokens, --ast, --help, --version
-- [x] Runtime library stub
+- [x] Runtime library
 - [x] Lexer test suite (161 tests)
+- [x] `#include` directive with file inlining
+- [x] `#define` macro support (maps to C #define)
+- [x] Array initializers `{1, 2, 3}`
+- [x] Multi-dimensional arrays `I64 arr[N][M]`
+- [x] Function pointer types `I64 (*callback)(I64)`
+- [x] Install script
 
 ---
 
 ## v0.2.0 — Language Completeness
 
-- [ ] `#include` directive (file inlining)
-- [ ] `#define` macro support (constant definitions)
-- [ ] `import` system
-- [ ] Function pointers
-- [ ] Multi-dimensional arrays
-- [ ] Array initializers `{1, 2, 3}`
-- [ ] Struct initializers
-- [ ] String escape handling in lexer (`\n`, `\t`, `\\`, etc.)
-- [ ] `extern` / `_extern` linkage
-- [ ] `U8 *` string type support
-- [ ] Improved `asm` / `_asm` handling
-- [ ] Ternary operator improvements
-- [ ] Operator precedence full HolyC compliance
+- [ ] String escape handling (`\n`, `\t`, etc.)
+- [ ] `import` system (module-level includes)
+- [ ] `extern` / `_extern` functional linkage
+- [ ] `U8 *` typed string support
 
 ---
 
