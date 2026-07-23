@@ -277,11 +277,12 @@ int driver_main(int argc, char **argv) {
         const char *dot = strrchr(opts.input_file, '.');
         size_t base_len = dot ? (size_t)(dot - opts.input_file) : strlen(opts.input_file);
 
-        auto_c = malloc(base_len + 3);
-        memcpy(auto_c, opts.input_file, base_len);
-        auto_c[base_len] = '.';
-        auto_c[base_len + 1] = 'c';
-        auto_c[base_len + 2] = '\0';
+        const char *slash = strrchr(opts.input_file, '/');
+        const char *basename = slash ? slash + 1 : opts.input_file;
+        size_t name_len = dot ? (size_t)(dot - basename) : strlen(basename);
+
+        auto_c = malloc(strlen("/tmp/") + name_len + 3);
+        sprintf(auto_c, "/tmp/%.*s.c", (int)name_len, basename);
         c_file = auto_c;
 
         if (!c_only) {
