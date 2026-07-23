@@ -1,0 +1,2 @@
+/usr/bin/ar qc libholyc_runtime.a CMakeFiles/holyc_runtime.dir/holyc_runtime.c.o
+/usr/bin/ranlib libholyc_runtime.a

@@ -795,14 +795,15 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
             string_buffer_append_cstr(&cg->buf, (node->kind == AST_UNION_DECL) ? "union" : "struct");
             string_buffer_append_cstr(&cg->buf, " {\n");
             cg->indent_level++;
-            AstNode *field = node->first_child;
-            if (field && field->kind == AST_IDENTIFIER) {
-                field = field->next;
+            AstNode *iter = node->first_child;
+            const char *class_name = NULL;
+            if (iter && iter->kind == AST_IDENTIFIER) {
+                class_name = iter->data.string_value;
+                iter = iter->next;
             }
-            while (field) {
-                if (field->kind != AST_STRUCT_FIELD) break;
+            while (iter && iter->kind == AST_STRUCT_FIELD) {
                 codegen_emit_indent(cg);
-                AstNode *ftype = field->first_child;
+                AstNode *ftype = iter->first_child;
                 AstNode *fname = ftype ? ftype->next : NULL;
                 if (ftype && ftype->kind == AST_NAMED_TYPE) {
                     string_buffer_append_cstr(&cg->buf, codegen_map_type_name(ftype->data.string_value));
@@ -810,14 +811,71 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 }
                 codegen_emit_expr(cg, fname);
                 string_buffer_append_cstr(&cg->buf, ";\n");
-                field = field->next;
+                iter = iter->next;
             }
             cg->indent_level--;
             string_buffer_append_cstr(&cg->buf, "} ");
-            if (node->first_child && node->first_child->kind == AST_IDENTIFIER) {
-                codegen_emit_expr(cg, node->first_child);
+            if (class_name) {
+                string_buffer_append_cstr(&cg->buf, class_name);
             }
             string_buffer_append_cstr(&cg->buf, ";\n\n");
+            iter = node->first_child;
+            if (iter && iter->kind == AST_IDENTIFIER) iter = iter->next;
+            while (iter && iter->kind == AST_STRUCT_FIELD) iter = iter->next;
+            while (iter) {
+                if (iter->kind == AST_FUNC_DECL) {
+                    AstNode *t = iter->first_child;
+                    if (!t || t->kind != AST_NAMED_TYPE) { iter = iter->next; continue; }
+                    AstNode *n = t->next;
+                    if (!n || n->kind != AST_IDENTIFIER) { iter = iter->next; continue; }
+                    const char *ret_type = t->data.string_value;
+                    const char *mname = n->data.string_value;
+                    string_buffer_append_cstr(&cg->buf, codegen_map_type_name(ret_type));
+                    string_buffer_append_char(&cg->buf, ' ');
+                    if (class_name) {
+                        string_buffer_append_cstr(&cg->buf, class_name);
+                        string_buffer_append_char(&cg->buf, '_');
+                    }
+                    string_buffer_append_cstr(&cg->buf, mname);
+                    string_buffer_append_cstr(&cg->buf, "(");
+                    if (class_name) {
+                        string_buffer_append_cstr(&cg->buf, class_name);
+                        string_buffer_append_cstr(&cg->buf, " *this");
+                    }
+                    AstNode *param = n->next;
+                    while (param && param->kind == AST_FUNC_PARAM) {
+                        string_buffer_append_cstr(&cg->buf, ", ");
+                        AstNode *ptype = param->first_child;
+                        AstNode *pname = ptype ? ptype->next : NULL;
+                        if (ptype && ptype->kind == AST_NAMED_TYPE) {
+                            string_buffer_append_cstr(&cg->buf,
+                                codegen_map_type_name(ptype->data.string_value));
+                            string_buffer_append_char(&cg->buf, ' ');
+                        }
+                        if (pname) codegen_emit_expr(cg, pname);
+                        param = param->next;
+                    }
+                    string_buffer_append_cstr(&cg->buf, ") ");
+                    AstNode *body = n->next;
+                    while (body && body->kind == AST_FUNC_PARAM) body = body->next;
+                    if (body && body->kind == AST_BLOCK) {
+                        string_buffer_append_cstr(&cg->buf, "{\n");
+                        cg->indent_level++;
+                        AstNode *stmt = body->first_child;
+                        while (stmt) {
+                            codegen_emit_indent(cg);
+                            codegen_emit_stmt(cg, stmt);
+                            stmt = stmt->next;
+                        }
+                        cg->indent_level--;
+                        codegen_emit_indent(cg);
+                        string_buffer_append_cstr(&cg->buf, "}\n\n");
+                    } else {
+                        string_buffer_append_cstr(&cg->buf, ";\n");
+                    }
+                }
+                iter = iter->next;
+            }
             break;
         }
 

@@ -851,16 +851,51 @@ static AstNode *parser_parse_top_level(Parser *p) {
             }
             parser_expect(p, TOK_LBRACE, "{");
             while (!parser_check(p, TOK_RBRACE) && !parser_check(p, TOK_EOF)) {
-                AstNode *field_type = parser_parse_type(p);
-                Token field_name = p->current;
-                parser_expect(p, TOK_IDENTIFIER, "field name");
-                AstNode *field = parser_make_node(p, AST_STRUCT_FIELD);
-                ast_add_child(field, field_type);
-                AstNode *fname = ast_node_create(AST_IDENTIFIER, field_name.loc);
-                fname->data.string_value = strndup(field_name.start, field_name.length);
-                ast_add_child(field, fname);
-                parser_expect(p, TOK_SEMICOLON, ";");
-                ast_add_child(struct_node, field);
+                if (parser_is_type_keyword(p->current.kind) || 
+                    p->current.kind == TOK_IDENTIFIER) {
+                    AstNode *field_type = parser_parse_type(p);
+                    Token name_tok = p->current;
+                    parser_expect(p, TOK_IDENTIFIER, "field/method name");
+                    if (parser_check(p, TOK_LPAREN)) {
+                        AstNode *method = parser_make_node(p, AST_FUNC_DECL);
+                        ast_add_child(method, field_type);
+                        AstNode *mname = ast_node_create(AST_IDENTIFIER, name_tok.loc);
+                        mname->data.string_value = strndup(name_tok.start, name_tok.length);
+                        ast_add_child(method, mname);
+                        parser_advance(p);
+                        if (!parser_check(p, TOK_RPAREN)) {
+                            do {
+                                AstNode *p_type = parser_parse_type(p);
+                                AstNode *param = parser_make_node(p, AST_FUNC_PARAM);
+                                ast_add_child(param, p_type);
+                                if (parser_check(p, TOK_IDENTIFIER)) {
+                                    AstNode *pname = ast_node_create(AST_IDENTIFIER, p->current.loc);
+                                    pname->data.string_value = strndup(p->current.start, p->current.length);
+                                    ast_add_child(param, pname);
+                                    parser_advance(p);
+                                }
+                                ast_add_child(method, param);
+                            } while (parser_match(p, TOK_COMMA));
+                        }
+                        parser_expect(p, TOK_RPAREN, ")");
+                        if (parser_check(p, TOK_LBRACE)) {
+                            ast_add_child(method, parser_parse_block(p));
+                        } else {
+                            parser_expect(p, TOK_SEMICOLON, ";");
+                        }
+                        ast_add_child(struct_node, method);
+                    } else {
+                        AstNode *field = parser_make_node(p, AST_STRUCT_FIELD);
+                        ast_add_child(field, field_type);
+                        AstNode *fname = ast_node_create(AST_IDENTIFIER, name_tok.loc);
+                        fname->data.string_value = strndup(name_tok.start, name_tok.length);
+                        ast_add_child(field, fname);
+                        parser_expect(p, TOK_SEMICOLON, ";");
+                        ast_add_child(struct_node, field);
+                    }
+                } else {
+                    parser_parse_stmt(p);
+                }
             }
             parser_expect(p, TOK_RBRACE, "}");
             parser_expect(p, TOK_SEMICOLON, ";");

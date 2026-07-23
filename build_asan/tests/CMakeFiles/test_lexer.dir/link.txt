@@ -1,0 +1,1 @@
+/usr/bin/cc -Wall -Wextra -Wpedantic -fsanitize=address -g -g -O0 -Wall -Wextra -Wpedantic CMakeFiles/test_lexer.dir/test_lexer.c.o -o test_lexer  ../src/libholyc_core.a 
