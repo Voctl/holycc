@@ -7,6 +7,7 @@
 
 typedef enum {
     TYPE_VOID,
+    TYPE_U0,
     TYPE_BOOL,
     TYPE_CHAR,
     TYPE_I8,
@@ -75,6 +76,7 @@ Type *type_create(TypeKind kind);
 void type_destroy(Type *type);
 
 Type *type_void(void);
+Type *type_u0(void);
 Type *type_bool(void);
 Type *type_char(void);
 Type *type_i8(void);

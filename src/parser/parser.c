@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <stdint.h>
 
 struct Parser {
     Lexer *lexer;
@@ -70,7 +71,7 @@ static bool parser_is_type_keyword(TokenKind kind) {
     switch (kind) {
         case TOK_KW_I8:   case TOK_KW_I16:  case TOK_KW_I32:  case TOK_KW_I64:
         case TOK_KW_U8:   case TOK_KW_U16:  case TOK_KW_U32:  case TOK_KW_U64:
-        case TOK_KW_F64:  case TOK_KW_BOOL: case TOK_KW_CHAR: case TOK_KW_VOID:
+        case TOK_KW_F64:  case TOK_KW_BOOL: case TOK_KW_CHAR: case TOK_KW_VOID: case TOK_KW_U0:
             return true;
         default:
             return false;
@@ -377,12 +378,29 @@ static AstNode *parser_parse_binary(Parser *p, int min_prec) {
             ast_add_child(assign, left);
             ast_add_child(assign, right);
             left = assign;
-        } else if (op == TOK_AMPERSAND_AMPERSAND || op == TOK_PIPE_PIPE) {
-            AstNode *node = parser_make_node(p, AST_BINARY_EXPR);
-            node->data.token_kind = op;
-            ast_add_child(node, left);
-            ast_add_child(node, right);
-            left = node;
+        } else if (prec == 10 || prec == 9) {
+            AstNode *first_cmp = parser_make_node(p, AST_BINARY_EXPR);
+            first_cmp->data.token_kind = op;
+            ast_add_child(first_cmp, left);
+            ast_add_child(first_cmp, right);
+
+            TokenKind next = p->current.kind;
+            int next_prec = parser_precedence(next);
+            if ((next_prec == 10 || next_prec == 9) && next != op) {
+                parser_advance(p);
+                AstNode *right2 = parser_parse_binary(p, next_prec + 1);
+                AstNode *second_cmp = parser_make_node(p, AST_BINARY_EXPR);
+                second_cmp->data.token_kind = next;
+                ast_add_child(second_cmp, ast_clone_node(right));
+                ast_add_child(second_cmp, right2);
+                AstNode *chain = parser_make_node(p, AST_BINARY_EXPR);
+                chain->data.token_kind = TOK_AMPERSAND_AMPERSAND;
+                ast_add_child(chain, first_cmp);
+                ast_add_child(chain, second_cmp);
+                left = chain;
+            } else {
+                left = first_cmp;
+            }
         } else {
             AstNode *node = parser_make_node(p, AST_BINARY_EXPR);
             node->data.token_kind = op;
@@ -474,10 +492,23 @@ static AstNode *parser_parse_stmt(Parser *p) {
             ast_add_child(node, parser_parse_expr(p));
             parser_expect(p, TOK_RPAREN, ")");
             parser_expect(p, TOK_LBRACE, "{");
+            uint64_t implicit_case_val = 0;
             while (!parser_check(p, TOK_RBRACE) && !parser_check(p, TOK_EOF)) {
                 if (parser_match(p, TOK_KW_CASE)) {
                     AstNode *case_node = parser_make_node(p, AST_CASE_STMT);
-                    ast_add_child(case_node, parser_parse_expr(p));
+                    if (parser_check(p, TOK_COLON)) {
+                        AstNode *val = parser_make_node(p, AST_INTEGER_LITERAL);
+                        val->data.int_value = (uint64_t)implicit_case_val++;
+                        ast_add_child(case_node, val);
+                    } else {
+                        AstNode *val = parser_parse_expr(p);
+                        ast_add_child(case_node, val);
+                        if (parser_match(p, TOK_ELLIPSIS)) {
+                            AstNode *range_end = parser_parse_expr(p);
+                            case_node->kind = AST_CASE_RANGE;
+                            ast_add_child(case_node, range_end);
+                        }
+                    }
                     parser_expect(p, TOK_COLON, ":");
                     while (!parser_check(p, TOK_KW_CASE) &&
                            !parser_check(p, TOK_KW_DEFAULT) &&

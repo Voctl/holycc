@@ -84,6 +84,7 @@ typedef enum {
     TOK_KW_BOOL,
     TOK_KW_CHAR,
     TOK_KW_VOID,
+    TOK_KW_U0,
 
     TOK_KW_IF,
     TOK_KW_ELSE,

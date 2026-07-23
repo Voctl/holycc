@@ -26,6 +26,7 @@ typedef enum {
     AST_DO_WHILE_STMT,
     AST_SWITCH_STMT,
     AST_CASE_STMT,
+    AST_CASE_RANGE,
     AST_DEFAULT_STMT,
 
     AST_BREAK_STMT,
@@ -108,6 +109,7 @@ void ast_node_destroy_tree(AstNode *root);
 
 void ast_add_child(AstNode *parent, AstNode *child);
 void ast_set_type(AstNode *node, AstNode *type_node);
+AstNode *ast_clone_node(const AstNode *node);
 
 void ast_visit(AstNode *node, AstVisitor pre_visit, AstVisitor post_visit, void *ctx);
 

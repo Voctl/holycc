@@ -80,6 +80,7 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_DO_WHILE_STMT]         = "do_while_stmt",
     [AST_SWITCH_STMT]           = "switch_stmt",
     [AST_CASE_STMT]             = "case_stmt",
+    [AST_CASE_RANGE]            = "case_range",
     [AST_DEFAULT_STMT]          = "default_stmt",
     [AST_BREAK_STMT]            = "break_stmt",
     [AST_CONTINUE_STMT]         = "continue_stmt",
@@ -115,6 +116,28 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_DEFINE]                = "define",
     [AST_INCLUDE]               = "include",
 };
+
+AstNode *ast_clone_node(const AstNode *node) {
+    if (!node) return NULL;
+    AstNode *clone = ast_node_create(node->kind, node->loc);
+    clone->flags = node->flags;
+    clone->data = node->data;
+    if (node->data.string_value) {
+        clone->data.string_value = strdup(node->data.string_value);
+    }
+    AstNode *child = node->first_child;
+    AstNode *last = NULL;
+    while (child) {
+        AstNode *child_clone = ast_clone_node(child);
+        child_clone->parent = clone;
+        if (!clone->first_child) clone->first_child = child_clone;
+        if (last) last->next = child_clone;
+        last = child_clone;
+        child = child->next;
+    }
+    clone->last_child = last;
+    return clone;
+}
 
 const char *ast_kind_name(AstKind kind) {
     if (kind < AST_COUNT && ast_kind_names[kind]) {

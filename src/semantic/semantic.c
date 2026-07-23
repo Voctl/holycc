@@ -52,6 +52,7 @@ static Type *semantic_resolve_type(Semantic *s, AstNode *node) {
             if (!name) return type_void();
 
             if (strcmp(name, "void") == 0) return type_void();
+            if (strcmp(name, "U0") == 0) return type_u0();
             if (strcmp(name, "Bool") == 0) return type_bool();
             if (strcmp(name, "Char") == 0) return type_char();
             if (strcmp(name, "I8") == 0)  return type_i8();

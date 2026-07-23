@@ -72,6 +72,7 @@ static const TokenInfo token_table[TOK_COUNT] = {
     T(TOK_KW_BOOL,            "Bool",                 "Bool"),
     T(TOK_KW_CHAR,            "Char",                 "Char"),
     T(TOK_KW_VOID,            "void",                 "void"),
+    T(TOK_KW_U0,              "U0",                   "U0"),
     T(TOK_KW_IF,              "if",                   "if"),
     T(TOK_KW_ELSE,            "else",                 "else"),
     T(TOK_KW_FOR,             "for",                  "for"),

@@ -22,6 +22,7 @@ static const KeywordEntry keywords[] = {
     {"Bool",      4, TOK_KW_BOOL},
     {"Char",      4, TOK_KW_CHAR},
     {"void",      4, TOK_KW_VOID},
+    {"U0",        2, TOK_KW_U0},
     {"if",        2, TOK_KW_IF},
     {"else",      4, TOK_KW_ELSE},
     {"for",       3, TOK_KW_FOR},
@@ -230,7 +231,7 @@ static Token lexer_read_number(Lexer *lexer) {
     }
 
     if (!is_hex && !is_bin) {
-        if (lexer_peek_char(lexer) == '.') {
+        if (lexer_peek_char(lexer) == '.' && lexer_peek_char_n(lexer, 1) != '.') {
             has_dot = true;
             lexer_advance(lexer);
             while (!lexer_is_eof(lexer) && isdigit((unsigned char)lexer_peek_char(lexer))) {

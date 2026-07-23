@@ -29,6 +29,7 @@ static const char *codegen_map_type_name(const char *name) {
     if (strcmp(name, "Bool") == 0) return "bool";
     if (strcmp(name, "Char") == 0) return "char";
     if (strcmp(name, "void") == 0) return "void";
+    if (strcmp(name, "U0") == 0) return "void";
     return name;
 }
 
@@ -571,6 +572,25 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 codegen_emit_indent(cg);
                 codegen_emit_stmt(cg, child);
                 child = child->next;
+            }
+            cg->indent_level--;
+            break;
+        }
+
+        case AST_CASE_RANGE: {
+            AstNode *start = node->first_child;
+            AstNode *end = start->next;
+            uint64_t from = start->data.int_value;
+            uint64_t to = end->data.int_value;
+            for (uint64_t i = from; i <= to; i++) {
+                string_buffer_append_fmt(&cg->buf, "case %llu:\n", (unsigned long long)i);
+            }
+            cg->indent_level++;
+            AstNode *stmt = end->next;
+            while (stmt) {
+                codegen_emit_indent(cg);
+                codegen_emit_stmt(cg, stmt);
+                stmt = stmt->next;
             }
             cg->indent_level--;
             break;

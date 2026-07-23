@@ -67,6 +67,12 @@ Type *type_void(void) {
     return t;
 }
 
+Type *type_u0(void) {
+    Type *t = type_create(TYPE_U0);
+    type_setup_builtin(t, 0, 0);
+    return t;
+}
+
 Type *type_bool(void) {
     Type *t = type_create(TYPE_BOOL);
     type_setup_builtin(t, 1, 1);
@@ -163,6 +169,7 @@ Type *type_function(Type *return_type, FuncParam *params, bool variadic) {
 const char *type_kind_name(TypeKind kind) {
     switch (kind) {
         case TYPE_VOID:        return "void";
+        case TYPE_U0:          return "U0";
         case TYPE_BOOL:        return "Bool";
         case TYPE_CHAR:        return "Char";
         case TYPE_I8:          return "I8";
@@ -189,6 +196,7 @@ const char *type_kind_name(TypeKind kind) {
 const char *type_c_name(const Type *type) {
     switch (type->kind) {
         case TYPE_VOID:     return "void";
+        case TYPE_U0:       return "void";
         case TYPE_BOOL:     return "bool";
         case TYPE_CHAR:     return "char";
         case TYPE_I8:       return "int8_t";
