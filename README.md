@@ -36,9 +36,7 @@ No TempleOS internals. No ring 0. No biblical references.
 
 ## &sect; In Memoriam
 
-<p align="center">
-  <img src="docs/terry.jpg" alt="Terry A. Davis" width="380">
-</p>
+<img align="right" src="docs/terry.jpg" alt="Terry A. Davis" width="380">
 
 HolyC is the language created by **Terry A. Davis** (1969&ndash;2018) as
 the systems programming language for TempleOS &mdash; an operating system
