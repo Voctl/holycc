@@ -853,6 +853,69 @@ static AstNode *parser_parse_top_level(Parser *p) {
             return parser_make_node(p, AST_NONE);
         }
 
+        case TOK_KW_IMPORT: {
+            parser_advance(p);
+            if (parser_check(p, TOK_STRING)) {
+                const char *filepath = strndup(p->current.start + 1, p->current.length - 2);
+                parser_advance(p);
+
+                AstNode *inc = parser_make_node(p, AST_INCLUDE);
+                AstNode *str_node = parser_make_node(p, AST_STRING_LITERAL);
+                str_node->data.string_value = filepath;
+                ast_add_child(inc, str_node);
+
+                char fullpath[1024];
+                if (p->sourcedir && filepath[0] != '/') {
+                    snprintf(fullpath, sizeof(fullpath), "%s/%s", p->sourcedir, filepath);
+                } else {
+                    snprintf(fullpath, sizeof(fullpath), "%s", filepath);
+                }
+
+                size_t len;
+                char *src = read_file(fullpath, &len);
+                if (!src && p->sourcedir && filepath[0] != '/') {
+                    if (strlen(fullpath) + 3 < sizeof(fullpath)) {
+                        strcat(fullpath, ".HC");
+                        src = read_file(fullpath, &len);
+                    }
+                }
+                if (!src) {
+                    snprintf(fullpath, sizeof(fullpath), "%s", filepath);
+                    src = read_file(fullpath, &len);
+                    if (!src) {
+                        if (strlen(fullpath) + 3 < sizeof(fullpath)) {
+                            strcat(fullpath, ".HC");
+                            src = read_file(fullpath, &len);
+                        }
+                    }
+                }
+                if (src) {
+                    Lexer *inc_lexer = lexer_create(fullpath, src, len);
+                    Parser *inc_parser = parser_create(inc_lexer, p->diag);
+                    parser_set_sourcedir(inc_parser, p->sourcedir);
+                    AstNode *inc_ast = parser_parse_translation_unit(inc_parser);
+                    AstNode *child = inc_ast->first_child;
+                    while (child) {
+                        AstNode *next = child->next;
+                        child->next = NULL;
+                        child->parent = NULL;
+                        ast_add_child(inc, child);
+                        child = next;
+                    }
+                    inc_ast->first_child = NULL;
+                    inc_ast->last_child = NULL;
+                    ast_node_destroy_tree(inc_ast);
+                    parser_destroy(inc_parser);
+                    lexer_destroy(inc_lexer);
+                    free(src);
+                } else {
+                    p->diag->error(p->current.loc, "cannot open imported file '%s'", filepath);
+                }
+                return inc;
+            }
+            return parser_make_node(p, AST_NONE);
+        }
+
         case TOK_KW_DEFINE: {
             parser_advance(p);
             AstNode *def = parser_make_node(p, AST_DEFINE);

@@ -1,5 +1,9 @@
 # holycc — HolyC Compiler for Linux
 
+<p align="center">
+  <img src="docs/logo.jpg" alt="HolyC Logo" width="350">
+</p>
+
 **HolyC → C17 transpiler**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
@@ -170,7 +174,7 @@ holycc/
 ├── runtime/           # HolyC runtime library
 ├── tests/             # Test suite
 ├── examples/          # Example HolyC programs
-├── docs/              # Documentation
+├── docs/              # Documentation (contains logo.jpg, terry.jpg)
 ├── cmake/             # CMake modules
 ├── CMakeLists.txt     # Build configuration
 └── README.md
@@ -229,6 +233,10 @@ Free Software, Free Society. &mdash; RMS
 ---
 
 ## Credits
+
+<p align="center">
+  <img src="docs/terry.jpg" alt="Terry A. Davis" width="400">
+</p>
 
 HolyC is the programming language created by **Terry A. Davis** for TempleOS.
 This project is a tribute to his work — reimplemented as a clean, portable,

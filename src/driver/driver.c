@@ -10,16 +10,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #define HOLYCC_VERSION "0.1.0"
 
 static void print_usage(const char *prog) {
     printf("Usage: %s [options] <input.HC>\n", prog);
     printf("\nOptions:\n");
-    printf("  -o <file>        Output file\n");
-    printf("  -c               Compile only (no link)\n");
-    printf("  -S               Assembly only (not implemented)\n");
-    printf("  --emit-c         Emit C code (default, outputs .c file)\n");
+    printf("  -o <file>        Output file (executable or .c)\n");
+    printf("  -c, --emit-c     Emit C only, keep .c file\n");
+    printf("  --compile        Compile to executable (default)\n");
+    printf("  --run            Compile and run immediately\n");
+    printf("  --keep-c         Keep generated .c file\n");
     printf("  --tokens         Dump token stream\n");
     printf("  --ast            Dump AST\n");
     printf("  --help           Show this help\n");
@@ -100,19 +103,68 @@ static void print_ast(AstNode *root) {
     }
 }
 
+static bool compile_c_to_binary(const char *c_file, const char *out_file) {
+    char cmd[2048];
+    const char *runtime_lib = NULL;
+
+    const char *home = getenv("HOME");
+    char libpath[1024];
+    if (home) {
+        snprintf(libpath, sizeof(libpath), "%s/.local/lib/libholyc_runtime.a", home);
+        if (access(libpath, R_OK) == 0) runtime_lib = libpath;
+    }
+    if (!runtime_lib || access(runtime_lib, R_OK) != 0) {
+        const char *paths[] = {
+            "../runtime/libholyc_runtime.a",
+            "runtime/libholyc_runtime.a",
+            NULL
+        };
+        for (int i = 0; paths[i]; i++) {
+            if (access(paths[i], R_OK) == 0) {
+                runtime_lib = paths[i];
+                break;
+            }
+        }
+    }
+
+    if (runtime_lib) {
+        snprintf(cmd, sizeof(cmd),
+                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" \"%s\" -o \"%s\" 2>&1",
+                 c_file, runtime_lib, out_file);
+    } else {
+        snprintf(cmd, sizeof(cmd),
+                 "gcc -std=c17 -Wall -Wextra -Wpedantic -O2 \"%s\" -o \"%s\" 2>&1",
+                 c_file, out_file);
+    }
+
+    fprintf(stderr, "Compiling: %s\n", cmd);
+
+    int ret = system(cmd);
+    if (ret != 0) {
+        fprintf(stderr, "GCC compilation failed (exit %d)\n", WEXITSTATUS(ret));
+        return false;
+    }
+    return true;
+}
+
 int driver_main(int argc, char **argv) {
     DriverOptions opts = {0};
     opts.input_file = NULL;
+    bool explicit_output = false;
+    bool c_only = false;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) {
             opts.output_file = argv[++i];
-        } else if (strcmp(argv[i], "-c") == 0) {
+            explicit_output = true;
+        } else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--emit-c") == 0) {
+            c_only = true;
+        } else if (strcmp(argv[i], "--compile") == 0) {
             opts.compile_only = true;
-        } else if (strcmp(argv[i], "-S") == 0) {
-            opts.assembly_only = true;
-        } else if (strcmp(argv[i], "--emit-c") == 0) {
-            opts.emit_c = true;
+        } else if (strcmp(argv[i], "--run") == 0) {
+            opts.compile_run = true;
+        } else if (strcmp(argv[i], "--keep-c") == 0) {
+            opts.keep_c = true;
         } else if (strcmp(argv[i], "--tokens") == 0) {
             opts.dump_tokens = true;
         } else if (strcmp(argv[i], "--ast") == 0) {
@@ -210,25 +262,44 @@ int driver_main(int argc, char **argv) {
     SymbolTable *symtab = semantic_get_symbol_table(semantic);
     CodeGen *cg = codegen_create(symtab);
 
-    const char *output_path = opts.output_file;
-    char *auto_output = NULL;
+    char *c_file = NULL;
+    char *exe_file = NULL;
+    char *auto_c = NULL;
+    char *auto_exe = NULL;
 
-    if (!output_path) {
+    if (explicit_output && !c_only) {
+        c_file = malloc(strlen(opts.output_file) + 3);
+        sprintf(c_file, "%s.c", opts.output_file);
+        exe_file = strdup(opts.output_file);
+    } else if (explicit_output && c_only) {
+        c_file = strdup(opts.output_file);
+    } else {
         const char *dot = strrchr(opts.input_file, '.');
         size_t base_len = dot ? (size_t)(dot - opts.input_file) : strlen(opts.input_file);
-        auto_output = malloc(base_len + 3);
-        memcpy(auto_output, opts.input_file, base_len);
-        auto_output[base_len] = '.';
-        auto_output[base_len + 1] = 'c';
-        auto_output[base_len + 2] = '\0';
-        output_path = auto_output;
+
+        auto_c = malloc(base_len + 3);
+        memcpy(auto_c, opts.input_file, base_len);
+        auto_c[base_len] = '.';
+        auto_c[base_len + 1] = 'c';
+        auto_c[base_len + 2] = '\0';
+        c_file = auto_c;
+
+        if (!c_only) {
+            auto_exe = malloc(base_len + 1);
+            memcpy(auto_exe, opts.input_file, base_len);
+            auto_exe[base_len] = '\0';
+            exe_file = auto_exe;
+        }
     }
 
-    bool ok = codegen_generate_file(cg, ast, output_path);
+    bool ok = codegen_generate_file(cg, ast, c_file);
 
     if (!ok) {
-        fprintf(stderr, "Error: failed to write output to '%s'\n", output_path);
-        free(auto_output);
+        fprintf(stderr, "Error: failed to write output to '%s'\n", c_file);
+        free(auto_c);
+        free(auto_exe);
+        free(c_file != auto_c ? c_file : NULL);
+        free(exe_file != auto_exe ? exe_file : NULL);
         codegen_destroy(cg);
         ast_node_destroy_tree(ast);
         semantic_destroy(semantic);
@@ -239,8 +310,67 @@ int driver_main(int argc, char **argv) {
         return 1;
     }
 
-    fprintf(stderr, "Generated: %s\n", output_path);
-    free(auto_output);
+    fprintf(stderr, "Generated C: %s\n", c_file);
+
+    if (!c_only && exe_file) {
+        bool compiled = compile_c_to_binary(c_file, exe_file);
+        if (!compiled) {
+            free(auto_c);
+            free(auto_exe);
+            free(c_file != auto_c ? c_file : NULL);
+            free(exe_file != auto_exe ? exe_file : NULL);
+            codegen_destroy(cg);
+            ast_node_destroy_tree(ast);
+            semantic_destroy(semantic);
+            diagnostics_destroy(&diag);
+            parser_destroy(parser);
+            lexer_destroy(lexer);
+            free(source);
+            return 1;
+        }
+        fprintf(stderr, "Compiled: %s\n", exe_file);
+
+        if (!opts.keep_c) {
+            unlink(c_file);
+        }
+
+        if (opts.compile_run) {
+            fprintf(stderr, "Running: %s\n", exe_file);
+            fprintf(stderr, "---\n");
+            char run_cmd[2048];
+            snprintf(run_cmd, sizeof(run_cmd), "./\"%s\"", exe_file);
+            int run_ret = system(run_cmd);
+            fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
+        }
+    } else if (opts.compile_run) {
+        bool compiled = compile_c_to_binary(c_file, c_file);
+        if (!compiled) {
+            free(auto_c);
+            free(auto_exe);
+            free(c_file != auto_c ? c_file : NULL);
+            free(exe_file != auto_exe ? exe_file : NULL);
+            codegen_destroy(cg);
+            ast_node_destroy_tree(ast);
+            semantic_destroy(semantic);
+            diagnostics_destroy(&diag);
+            parser_destroy(parser);
+            lexer_destroy(lexer);
+            free(source);
+            return 1;
+        }
+        fprintf(stderr, "Compiled: %s\n", c_file);
+        fprintf(stderr, "Running: %s\n", c_file);
+        fprintf(stderr, "---\n");
+        char run_cmd[2048];
+        snprintf(run_cmd, sizeof(run_cmd), "./\"%s\"", c_file);
+        int run_ret = system(run_cmd);
+        fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
+    }
+
+    free(auto_c);
+    free(auto_exe);
+    free(c_file != auto_c ? c_file : NULL);
+    free(exe_file != auto_exe ? exe_file : NULL);
 
     codegen_destroy(cg);
     ast_node_destroy_tree(ast);

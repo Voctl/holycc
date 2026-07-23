@@ -9,10 +9,12 @@ typedef struct {
     bool compile_only;
     bool assembly_only;
     bool emit_c;
+    bool compile_run;
     bool dump_tokens;
     bool dump_ast;
     bool show_help;
     bool show_version;
+    bool keep_c;
 } DriverOptions;
 
 int driver_main(int argc, char **argv);
