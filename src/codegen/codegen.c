@@ -44,6 +44,23 @@ static void codegen_emit_indent(CodeGen *cg) {
     string_buffer_indent(&cg->buf, cg->indent_level);
 }
 
+static void codegen_emit_runtime_protos(CodeGen *cg) {
+    string_buffer_append_cstr(&cg->buf,
+        "// HolyC runtime built-in functions\n"
+        "void Print(const char *fmt, ...);\n"
+        "void PrintLn(const char *fmt, ...);\n"
+        "void *MAlloc(uint64_t size);\n"
+        "void Free(void *ptr);\n"
+        "uint64_t StrLen(const char *str);\n"
+        "bool StrCompare(const char *a, const char *b);\n"
+        "int64_t AtoI(const char *str);\n"
+        "double AtoF(const char *str);\n"
+        "void MemSet(uint8_t *dst, uint8_t value, uint64_t count);\n"
+        "void MemCpy(uint8_t *dst, const uint8_t *src, uint64_t count);\n"
+        "int64_t MemCompare(const uint8_t *a, const uint8_t *b, uint64_t count);\n\n"
+    );
+}
+
 static void codegen_emit_expr(CodeGen *cg, AstNode *node);
 static void codegen_emit_stmt(CodeGen *cg, AstNode *node);
 
@@ -251,10 +268,50 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
             string_buffer_append_cstr(&cg->buf, "#include <stdlib.h>\n");
             string_buffer_append_cstr(&cg->buf, "#include <string.h>\n\n");
 
+            codegen_emit_runtime_protos(cg);
+
             AstNode *child = node->first_child;
+            bool has_explicit_main = false;
+            bool has_top_stmts = false;
+
+            child = node->first_child;
             while (child) {
-                codegen_emit_stmt(cg, child);
+                if (child->kind == AST_FUNC_DECL) {
+                    AstNode *t = child->first_child;
+                    AstNode *n = t ? t->next : NULL;
+                    if (n && n->kind == AST_IDENTIFIER &&
+                        strcmp(n->data.string_value, "main") == 0) {
+                        has_explicit_main = true;
+                    }
+                }
+                if (!ast_kind_is_declaration(child->kind)) {
+                    has_top_stmts = true;
+                }
                 child = child->next;
+            }
+
+            child = node->first_child;
+            while (child) {
+                if (ast_kind_is_declaration(child->kind)) {
+                    codegen_emit_stmt(cg, child);
+                }
+                child = child->next;
+            }
+
+            if (has_top_stmts && !has_explicit_main) {
+                string_buffer_append_cstr(&cg->buf, "\nint main() {\n");
+                cg->indent_level++;
+                child = node->first_child;
+                while (child) {
+                    if (!ast_kind_is_declaration(child->kind)) {
+                        codegen_emit_indent(cg);
+                        codegen_emit_stmt(cg, child);
+                    }
+                    child = child->next;
+                }
+                cg->indent_level--;
+                codegen_emit_indent(cg);
+                string_buffer_append_cstr(&cg->buf, "}\n");
             }
             break;
         }

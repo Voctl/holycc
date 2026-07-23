@@ -338,7 +338,7 @@ int driver_main(int argc, char **argv) {
             fprintf(stderr, "Running: %s\n", exe_file);
             fprintf(stderr, "---\n");
             char run_cmd[2048];
-            snprintf(run_cmd, sizeof(run_cmd), "./\"%s\"", exe_file);
+            snprintf(run_cmd, sizeof(run_cmd), "\"%s\"", exe_file);
             int run_ret = system(run_cmd);
             fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
         }
@@ -362,7 +362,7 @@ int driver_main(int argc, char **argv) {
         fprintf(stderr, "Running: %s\n", c_file);
         fprintf(stderr, "---\n");
         char run_cmd[2048];
-        snprintf(run_cmd, sizeof(run_cmd), "./\"%s\"", c_file);
+        snprintf(run_cmd, sizeof(run_cmd), "\"%s\"", c_file);
         int run_ret = system(run_cmd);
         fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
     }

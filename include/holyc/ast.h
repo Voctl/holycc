@@ -2,6 +2,7 @@
 #define HOLYC_AST_H
 
 #include "holyc/token.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -111,5 +112,6 @@ void ast_set_type(AstNode *node, AstNode *type_node);
 void ast_visit(AstNode *node, AstVisitor pre_visit, AstVisitor post_visit, void *ctx);
 
 const char *ast_kind_name(AstKind kind);
+bool ast_kind_is_declaration(AstKind kind);
 
 #endif

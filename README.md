@@ -59,56 +59,35 @@ holycc program.HC -o out.c && gcc out.c -o program && ./program
 
 ## &sect; A Taste
 
-<table>
-<tr>
-<td width="50%">
+HolyC programs need no boilerplate. Just write code and it runs:
 
-**`math.HC`** &mdash; HolyC input
+**`hello.HC`**
 ```c
-I64 Square(I64 x)
-{
-    return x * x;
-}
-
-F64 Half(F64 x)
-{
-    return x / 2.0;
-}
-
-class Vec2 {
-    F64 x;
-    F64 y;
-};
+Print("Hello, world!\n");
+return 0;
 ```
 
-</td>
-<td width="50%">
-
-**`math.c`** &mdash; Generated C17
-```c
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-int64_t Square(int64_t x) {
-    return (x * x);
-}
-
-double Half(double x) {
-    return (x / 2.0);
-}
-
-typedef struct {
-    double x;
-    double y;
-} Vec2;
+Compile & run:
+```bash
+holycc hello.HC && ./hello
 ```
 
-</td>
-</tr>
-</table>
+`Print`, `MAlloc`, `StrLen`, and all runtime functions are built-in —
+no imports, no includes, no ceremony.
 
-Clean. Predictable. Compiles with zero warnings.
+For larger programs, function declarations, structs, and types work
+just as you'd expect:
+
+**`math.HC`**
+```c
+I64 Square(I64 x) { return x * x; }
+
+class Vec2 { F64 x; F64 y; };
+
+Square(4);
+```
+
+Generated C is clean, readable, and GCC-ready.
 
 ---
 

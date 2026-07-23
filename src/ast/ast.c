@@ -122,3 +122,17 @@ const char *ast_kind_name(AstKind kind) {
     }
     return "unknown";
 }
+
+bool ast_kind_is_declaration(AstKind kind) {
+    switch (kind) {
+        case AST_FUNC_DECL:
+        case AST_STRUCT_DECL:
+        case AST_UNION_DECL:
+        case AST_ENUM_DECL:
+        case AST_VAR_DECL:
+        case AST_DEFINE:
+            return true;
+        default:
+            return false;
+    }
+}
