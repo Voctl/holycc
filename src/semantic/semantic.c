@@ -476,6 +476,8 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
         case AST_CONTINUE_STMT:
             if (s->loop_depth == 0) {
                 s->diag->error(node->loc, "'continue' outside loop");
+            } else {
+                s->diag->warning(node->loc, "'continue' is not HolyC — use 'goto' instead");
             }
             break;
 

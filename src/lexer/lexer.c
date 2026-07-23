@@ -56,6 +56,8 @@ static const KeywordEntry keywords[] = {
     {"offset",    6, TOK_KW_OFFSET},
     {"no_warn",   7, TOK_KW_NO_WARN},
     {"has",       3, TOK_KW_HAS},
+    {"reg",       3, TOK_KW_REG},
+    {"noreg",     5, TOK_KW_NOREG},
 };
 
 #define NUM_KEYWORDS (sizeof(keywords) / sizeof(keywords[0]))

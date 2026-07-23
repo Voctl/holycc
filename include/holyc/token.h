@@ -128,6 +128,8 @@ typedef enum {
     TOK_KW_NO_WARN,
 
     TOK_KW_HAS,
+    TOK_KW_REG,
+    TOK_KW_NOREG,
 
     TOK_PP_IF,
     TOK_PP_ELSE,

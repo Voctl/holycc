@@ -620,8 +620,20 @@ static AstNode *parser_parse_stmt(Parser *p) {
         default_case: {
             if (parser_is_type_keyword(p->current.kind) ||
                 p->current.kind == TOK_KW_PUBLIC ||
-                p->current.kind == TOK_KW_PRIVATE) {
+                p->current.kind == TOK_KW_PRIVATE ||
+                p->current.kind == TOK_KW_REG ||
+                p->current.kind == TOK_KW_NOREG) {
                 return parser_parse_decl(p);
+            }
+            if (p->current.kind == TOK_IDENTIFIER &&
+                p->peek.kind == TOK_COLON) {
+                AstNode *label = parser_make_node(p, AST_LABEL_STMT);
+                AstNode *name = parser_make_node(p, AST_IDENTIFIER);
+                name->data.string_value = strndup(p->current.start, p->current.length);
+                ast_add_child(label, name);
+                parser_advance(p);
+                parser_advance(p);
+                return label;
             }
             AstNode *node = parser_make_node(p, AST_EXPR_STMT);
             ast_add_child(node, parser_parse_expr(p));
@@ -671,6 +683,8 @@ static AstNode *parser_parse_type(Parser *p) {
 
 static AstNode *parser_parse_decl(Parser *p) {
     parser_match(p, TOK_KW_NO_WARN); // absorbed
+    parser_match(p, TOK_KW_REG); // absorbed
+    parser_match(p, TOK_KW_NOREG); // absorbed
     bool is_static = parser_match(p, TOK_KW_STATIC) || parser_match(p, TOK_KW_PRIVATE);
     bool is_extern = parser_match(p, TOK_KW_EXTERN);
     parser_match(p, TOK_KW_PUBLIC); // absorbed
