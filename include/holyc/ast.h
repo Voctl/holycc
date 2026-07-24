@@ -18,7 +18,6 @@ typedef enum {
     AST_VAR_DECL,
 
     AST_BLOCK,
-    AST_COMPOUND_STMT,
 
     AST_IF_STMT,
     AST_FOR_STMT,
