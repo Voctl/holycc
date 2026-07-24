@@ -21,8 +21,9 @@ cp "${PROJECT_DIR}/build/src/holycc" "${BIN_DIR}/holycc"
 chmod +x "${BIN_DIR}/holycc"
 
 echo "[3/3] Copying runtime..."
-cp "${PROJECT_DIR}/runtime/holyc_runtime.h" "${INSTALL_DIR}/include/" 2>/dev/null || mkdir -p "${INSTALL_DIR}/include" && cp "${PROJECT_DIR}/runtime/holyc_runtime.h" "${INSTALL_DIR}/include/"
-cp "${PROJECT_DIR}/build/runtime/libholyc_runtime.a" "${INSTALL_DIR}/lib/" 2>/dev/null || mkdir -p "${INSTALL_DIR}/lib" && cp "${PROJECT_DIR}/build/runtime/libholyc_runtime.a" "${INSTALL_DIR}/lib/"
+mkdir -p "${INSTALL_DIR}/include" "${INSTALL_DIR}/lib"
+cp "${PROJECT_DIR}/runtime/holyc_runtime.h" "${INSTALL_DIR}/include/"
+cp "${PROJECT_DIR}/build/runtime/libholyc_runtime.a" "${INSTALL_DIR}/lib/"
 
 echo ""
 echo "=== Done ==="
