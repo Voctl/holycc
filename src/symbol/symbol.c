@@ -70,7 +70,7 @@ Symbol *symbol_add(SymbolTable *table, const char *name, SymbolKind kind,
         if (table->diag) {
             table->diag->error(loc, "duplicate definition of '%s'", name);
         }
-        if (existing->decl_loc.line > 0 && table->diag) {
+        if (existing->decl_loc.line > 0) {
             table->diag->note(existing->decl_loc, "previous definition here");
         }
         return NULL;
