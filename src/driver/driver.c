@@ -283,8 +283,9 @@ int driver_main(int argc, char **argv) {
         const char *basename = slash ? slash + 1 : opts.input_file;
         size_t name_len = dot ? (size_t)(dot - basename) : strlen(basename);
 
-        auto_c = malloc(strlen("/tmp/") + name_len + 3);
-        sprintf(auto_c, "/tmp/%.*s.c", (int)name_len, basename);
+        size_t auto_c_len = strlen("/tmp/") + name_len + 3;
+        auto_c = malloc(auto_c_len);
+        snprintf(auto_c, auto_c_len, "/tmp/%.*s.c", (int)name_len, basename);
         c_file = auto_c;
 
         if (!c_only) {
