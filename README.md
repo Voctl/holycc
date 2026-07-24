@@ -81,8 +81,6 @@ holycc hello.HC       # HolyC → C17 → binary
 
 ---
 
-
-
 ## &sect; Feature Matrix
 
 ### Type System
