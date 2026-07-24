@@ -565,7 +565,7 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 string_buffer_append_char(&cg->buf, ' ');
             }
 
-            if (type_node->kind != AST_FUNC_POINTER_TYPE) {
+            if (type_node && type_node->kind != AST_FUNC_POINTER_TYPE) {
                 codegen_emit_expr(cg, name_node);
             }
 
