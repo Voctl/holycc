@@ -53,9 +53,8 @@ static void parser_expect(Parser *p, TokenKind kind, const char *msg) {
         parser_advance(p);
         return;
     }
-    (void)msg;
-    p->diag->error(p->current.loc, "expected %s, got %s",
-                   token_kind_spelling(kind),
+    p->diag->error(p->current.loc, "expected %s (%s), got %s",
+                   msg, token_kind_spelling(kind),
                    token_kind_name(p->current.kind));
 }
 
