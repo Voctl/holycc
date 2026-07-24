@@ -16,7 +16,7 @@
 - CMake build system with C17 standard, -Wall -Wextra -Wpedantic
 - Source location tracking (file, line, column) in all tokens and AST nodes
 - Human-friendly diagnostics with source snippets
-- MIT License
+- GNU General Public License v3.0
 - Comprehensive README, ROADMAP, architecture documentation
 
 ### Supported HolyC Features
