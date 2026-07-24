@@ -693,6 +693,7 @@ static AstNode *parser_parse_type(Parser *p) {
         p->current.kind == TOK_KW_CLASS ||
         p->current.kind == TOK_KW_UNION ||
         p->current.kind == TOK_IDENTIFIER) {
+        free((void *)type_node->data.string_value);
         type_node->data.string_value = strndup(p->current.start, p->current.length);
         parser_advance(p);
     } else if (p->current.kind == TOK_KW_ENUM) {
