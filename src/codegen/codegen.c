@@ -362,8 +362,6 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
             AstNode *child = node->first_child;
             bool has_explicit_main = false;
             bool has_top_stmts = false;
-
-            child = node->first_child;
             while (child) {
                 if (child->kind == AST_FUNC_DECL) {
                     AstNode *t = child->first_child;
