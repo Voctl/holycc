@@ -269,8 +269,9 @@ int driver_main(int argc, char **argv) {
     char *auto_exe = NULL;
 
     if (explicit_output && !c_only) {
-        c_file = malloc(strlen(opts.output_file) + 3);
-        sprintf(c_file, "%s.c", opts.output_file);
+        size_t c_file_len = strlen(opts.output_file) + 3;
+        c_file = malloc(c_file_len);
+        snprintf(c_file, c_file_len, "%s.c", opts.output_file);
         exe_file = strdup(opts.output_file);
     } else if (explicit_output && c_only) {
         c_file = strdup(opts.output_file);
