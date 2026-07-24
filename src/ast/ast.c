@@ -72,7 +72,6 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_ENUM_DECL]             = "enum_decl",
     [AST_VAR_DECL]              = "var_decl",
     [AST_BLOCK]                 = "block",
-    [AST_COMPOUND_STMT]         = "compound_stmt",
     [AST_IF_STMT]               = "if_stmt",
     [AST_FOR_STMT]              = "for_stmt",
     [AST_WHILE_STMT]            = "while_stmt",
