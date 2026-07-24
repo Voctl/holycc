@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
