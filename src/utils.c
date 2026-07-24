@@ -98,6 +98,11 @@ char *read_file(const char *path, size_t *out_len) {
     size_t read = fread(buf, 1, (size_t)size, f);
     fclose(f);
 
+    if (read != (size_t)size) {
+        free(buf);
+        return NULL;
+    }
+
     buf[read] = '\0';
     if (out_len) *out_len = read;
     return buf;
