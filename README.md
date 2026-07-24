@@ -224,8 +224,6 @@ Yes, we know. We'll get there. RMS doesn't believe in deadlines anyway.
 
 ---
 
----
-
 ## &sect; Contributing
 
 We welcome contributors. Seriously. Even if you use Emacs.
