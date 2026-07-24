@@ -2,7 +2,6 @@
 #include "holyc/utils.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 struct Parser {
     Lexer *lexer;
