@@ -7,8 +7,6 @@ typedef struct {
     const char *input_file;
     const char *output_file;
     bool compile_only;
-    bool assembly_only;
-    bool emit_c;
     bool compile_run;
     bool dump_tokens;
     bool dump_ast;
