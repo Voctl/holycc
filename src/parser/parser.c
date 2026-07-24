@@ -848,7 +848,7 @@ static AstNode *parser_parse_top_level(Parser *p) {
             }
             parser_expect(p, TOK_LBRACE, "{");
             while (!parser_check(p, TOK_RBRACE) && !parser_check(p, TOK_EOF)) {
-                if (parser_is_type_keyword(p->current.kind) || 
+                if (parser_is_type_keyword(p->current.kind) ||
                     p->current.kind == TOK_IDENTIFIER) {
                     AstNode *field_type = parser_parse_type(p);
                     Token name_tok = p->current;
