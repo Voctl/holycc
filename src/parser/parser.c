@@ -1,7 +1,5 @@
 #include "holyc/parser.h"
-#include "holyc/types.h"
 #include "holyc/utils.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
