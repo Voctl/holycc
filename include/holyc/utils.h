@@ -13,7 +13,7 @@ typedef struct {
 
 StringBuffer string_buffer_create(void);
 void string_buffer_destroy(StringBuffer *sb);
-void string_buffer_reserve(StringBuffer *sb, size_t capacity);
+bool string_buffer_reserve(StringBuffer *sb, size_t capacity);
 void string_buffer_append_char(StringBuffer *sb, char c);
 void string_buffer_append_str(StringBuffer *sb, const char *str, size_t len);
 void string_buffer_append_cstr(StringBuffer *sb, const char *str);
