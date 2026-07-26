@@ -1,3 +1,4 @@
+// HolyC compiler – entry point
 #include "holyc/driver.h"
 
 int main(int argc, char **argv) {
