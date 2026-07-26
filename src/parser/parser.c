@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 struct Parser {
     Lexer *lexer;
@@ -90,7 +91,11 @@ static AstNode *parser_parse_primary(Parser *p) {
         case TOK_INTEGER: {
             AstNode *node = parser_make_node(p, AST_INTEGER_LITERAL);
             char *str = strndup(p->current.start, p->current.length);
+            errno = 0;
             node->data.int_value = (uint64_t)strtoull(str, NULL, 0);
+            if (errno == ERANGE) {
+                p->diag->error(p->current.loc, "integer literal overflow");
+            }
             free(str);
             parser_advance(p);
             return node;
@@ -98,7 +103,11 @@ static AstNode *parser_parse_primary(Parser *p) {
         case TOK_FLOAT: {
             AstNode *node = parser_make_node(p, AST_FLOAT_LITERAL);
             char *str = strndup(p->current.start, p->current.length);
+            errno = 0;
             node->data.float_value = strtod(str, NULL);
+            if (errno == ERANGE) {
+                p->diag->error(p->current.loc, "float literal overflow");
+            }
             free(str);
             parser_advance(p);
             return node;
