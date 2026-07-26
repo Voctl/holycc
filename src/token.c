@@ -1,3 +1,4 @@
+// Token kind names and spellings table
 #include "holyc/token.h"
 
 typedef struct {
