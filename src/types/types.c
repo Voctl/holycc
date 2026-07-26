@@ -242,8 +242,20 @@ bool type_equals(const Type *a, const Type *b) {
         case TYPE_ARRAY:
             return a->array.length == b->array.length &&
                    type_equals(a->array.base, b->array.base);
-        case TYPE_FUNCTION:
-            return type_equals(a->function.return_type, b->function.return_type);
+        case TYPE_FUNCTION: {
+            if (!type_equals(a->function.return_type, b->function.return_type))
+                return false;
+            if (a->function.variadic != b->function.variadic)
+                return false;
+            FuncParam *pa = a->function.params, *pb = b->function.params;
+            while (pa && pb) {
+                if (!type_equals(pa->type, pb->type))
+                    return false;
+                pa = pa->next;
+                pb = pb->next;
+            }
+            return pa == pb;
+        }
         case TYPE_STRUCT:
         case TYPE_UNION:
         case TYPE_ENUM:
