@@ -1,3 +1,4 @@
+// CLI driver – orchestration of lexer, parser, semantic, codegen, and GCC
 #include "holyc/driver.h"
 #include "holyc/lexer.h"
 #include "holyc/parser.h"
@@ -48,8 +49,8 @@ static void print_tokens(Lexer *lexer) {
     }
 }
 
-static void print_ast_node(AstNode *node, int depth, void *ctx) {
-    (void)ctx;
+static void print_ast_node(AstNode *node, int depth, void *_unused) {
+    (void)_unused;
     for (int i = 0; i < depth; i++) printf("  ");
     printf("%s", ast_kind_name(node->kind));
     switch (node->kind) {
