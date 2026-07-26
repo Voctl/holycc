@@ -31,7 +31,10 @@ Diagnostics diagnostics_create(void) {
 }
 
 void diagnostics_destroy(Diagnostics *diag) {
-    if (diag) {
+    if (diag && diag->list) {
+        for (size_t i = 0; i < diag->list->count; i++) {
+            free((void *)diag->list->items[i].message);
+        }
         free(diag->list);
         diag->list = NULL;
     }
@@ -50,6 +53,9 @@ const Diagnostic *diagnostics_get(const Diagnostics *diag, size_t index) {
 
 void diagnostics_clear(Diagnostics *diag) {
     if (diag->list) {
+        for (size_t i = 0; i < diag->list->count; i++) {
+            free((void *)diag->list->items[i].message);
+        }
         diag->list->count = 0;
     }
     diag->had_error = false;
