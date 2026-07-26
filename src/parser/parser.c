@@ -688,19 +688,18 @@ static AstNode *parser_parse_block(Parser *p) {
 
 static AstNode *parser_parse_type(Parser *p) {
     AstNode *type_node = parser_make_node(p, AST_NAMED_TYPE);
-    type_node->data.string_value = strndup(p->current.start, p->current.length);
+    type_node->data.string_value = NULL;
 
     if (parser_is_type_keyword(p->current.kind) ||
         p->current.kind == TOK_KW_CLASS ||
         p->current.kind == TOK_KW_UNION ||
         p->current.kind == TOK_IDENTIFIER) {
-        free((void *)type_node->data.string_value);
         type_node->data.string_value = strndup(p->current.start, p->current.length);
         parser_advance(p);
     } else if (p->current.kind == TOK_KW_ENUM) {
         parser_advance(p);
+        type_node->data.string_value = strdup("enum");
     } else {
-        free((void *)type_node->data.string_value);
         type_node->data.string_value = strdup("void");
     }
 
