@@ -1,3 +1,4 @@
+// String buffer and file I/O utilities
 #include "holyc/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,24 +20,25 @@ void string_buffer_destroy(StringBuffer *sb) {
     sb->capacity = 0;
 }
 
-void string_buffer_reserve(StringBuffer *sb, size_t capacity) {
-    if (capacity <= sb->capacity) return;
+bool string_buffer_reserve(StringBuffer *sb, size_t capacity) {
+    if (capacity <= sb->capacity) return true;
     size_t new_cap = sb->capacity * 2;
     if (new_cap < capacity) new_cap = capacity;
     char *new_data = realloc(sb->data, new_cap);
-    if (!new_data) return;
+    if (!new_data) return false;
     sb->data = new_data;
     sb->capacity = new_cap;
+    return true;
 }
 
 void string_buffer_append_char(StringBuffer *sb, char c) {
-    string_buffer_reserve(sb, sb->length + 2);
+    if (!string_buffer_reserve(sb, sb->length + 2)) return;
     sb->data[sb->length++] = c;
     sb->data[sb->length] = '\0';
 }
 
 void string_buffer_append_str(StringBuffer *sb, const char *str, size_t len) {
-    string_buffer_reserve(sb, sb->length + len + 1);
+    if (!string_buffer_reserve(sb, sb->length + len + 1)) return;
     memcpy(sb->data + sb->length, str, len);
     sb->length += len;
     sb->data[sb->length] = '\0';
@@ -54,7 +56,7 @@ void string_buffer_append_fmt(StringBuffer *sb, const char *fmt, ...) {
 
     if (needed <= 0) return;
 
-    string_buffer_reserve(sb, sb->length + (size_t)needed + 1);
+    if (!string_buffer_reserve(sb, sb->length + (size_t)needed + 1)) return;
 
     va_start(args, fmt);
     vsnprintf(sb->data + sb->length, (size_t)needed + 1, fmt, args);
