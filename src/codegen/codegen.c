@@ -561,6 +561,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
                 }
                 if (elem_type && elem_type->kind == AST_NAMED_TYPE) {
                     string_buffer_append_cstr(&cg->buf, codegen_map_type_name(elem_type->data.string_value));
+                } else {
+                    string_buffer_append_cstr(&cg->buf, "int");
                 }
                 string_buffer_append_char(&cg->buf, ' ');
             }
