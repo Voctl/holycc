@@ -8,13 +8,15 @@ typedef struct FuncNameNode {
     struct FuncNameNode *next;
 } FuncNameNode;
 
+// Code generator state — buffers C output and tracks function names
 struct CodeGen {
     SymbolTable *symtab;
     int indent_level;
-    StringBuffer buf;
-    FuncNameNode *func_names;
+    StringBuffer buf;       // accumulating C17 output
+    FuncNameNode *func_names; // list of declared function names
 };
 
+// Map a HolyC type name to its C17 equivalent
 static const char *codegen_map_type_name(const char *name) {
     if (!name) return "void";
     if (strcmp(name, "I8") == 0)   return "int8_t";
@@ -54,10 +56,12 @@ void codegen_destroy(CodeGen *cg) {
     }
 }
 
+// Emit indentation (4 spaces per level)
 static void codegen_emit_indent(CodeGen *cg) {
     string_buffer_indent(&cg->buf, cg->indent_level);
 }
 
+// Register a function name for bare-call lookup
 static void codegen_add_func_name(CodeGen *cg, const char *name) {
     FuncNameNode *n = malloc(sizeof(FuncNameNode));
     n->name = strdup(name);
@@ -65,6 +69,7 @@ static void codegen_add_func_name(CodeGen *cg, const char *name) {
     cg->func_names = n;
 }
 
+// Check if name is a known function (for bare-call syntax)
 static bool codegen_is_func_name(CodeGen *cg, const char *name) {
     FuncNameNode *n = cg->func_names;
     while (n) {
@@ -74,6 +79,7 @@ static bool codegen_is_func_name(CodeGen *cg, const char *name) {
     return false;
 }
 
+// Emit forward declarations for all runtime library functions
 static void codegen_emit_runtime_protos(CodeGen *cg) {
     string_buffer_append_cstr(&cg->buf,
         "// HolyC runtime built-in functions\n"
@@ -100,6 +106,7 @@ static void codegen_emit_runtime_protos(CodeGen *cg) {
 static void codegen_emit_expr(CodeGen *cg, AstNode *node);
 static void codegen_emit_stmt(CodeGen *cg, AstNode *node);
 
+// Emit a C expression from an AST node
 static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
     if (!node) return;
 
@@ -340,6 +347,7 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
     }
 }
 
+// Emit a C statement from an AST node (the main code generation dispatcher)
 static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
     if (!node) return;
 
@@ -1007,6 +1015,7 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
     }
 }
 
+// Generate C17 to an open FILE stream
 bool codegen_generate(CodeGen *cg, AstNode *ast, FILE *output) {
     if (!ast || !output) return false;
 
@@ -1015,6 +1024,7 @@ bool codegen_generate(CodeGen *cg, AstNode *ast, FILE *output) {
     return true;
 }
 
+// Generate C17 to a file path (opens, writes, closes)
 bool codegen_generate_file(CodeGen *cg, AstNode *ast, const char *output_path) {
     FILE *f = fopen(output_path, "w");
     if (!f) return false;
