@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// AST node kinds – every node type in the abstract syntax tree
 typedef enum {
     AST_NONE = 0,
 
@@ -82,47 +83,54 @@ typedef enum {
     AST_COUNT
 } AstKind;
 
+// Flags attached to AST nodes (storage class, variadic, etc.)
 typedef enum {
     AST_FLAG_NONE = 0,
     AST_FLAG_CONST = 1 << 0,
     AST_FLAG_STATIC = 1 << 1,
     AST_FLAG_EXTERN = 1 << 2,
-    AST_FLAG_VARIADIC = 1 << 3,
+    AST_FLAG_VARIADIC = 1 << 3, // function has ... parameter
 } AstFlags;
 
 typedef struct AstNode AstNode;
 
+// AST node – linked tree with children, flags, and polymorphic data
 struct AstNode {
     AstKind kind;
     AstFlags flags;
     SourceLocation loc;
     AstNode *parent;
-    AstNode *next;
+    AstNode *next;        // sibling link
     AstNode *first_child;
     AstNode *last_child;
     union {
-        uint64_t int_value;
-        double float_value;
-        const char *string_value;
-        TokenKind token_kind;
+        uint64_t int_value;      // integer / bool literal
+        double float_value;      // float literal
+        const char *string_value; // identifier / string / named type
+        TokenKind token_kind;    // operator kind for binary/unary expr
         struct {
-            AstNode *type;
+            AstNode *type;       // typed node (casts, type annotations)
         } typed;
     } data;
 };
 
+// Visitor callback signature (pre-order or post-order)
 typedef void (*AstVisitor)(AstNode *node, void *ctx);
 
+// AST lifecycle
 AstNode *ast_node_create(AstKind kind, SourceLocation loc);
 void ast_node_destroy(AstNode *node);
 void ast_node_destroy_tree(AstNode *root);
 
+// Tree manipulation
 void ast_add_child(AstNode *parent, AstNode *child);
 void ast_set_type(AstNode *node, AstNode *type_node);
 AstNode *ast_clone_node(const AstNode *node);
 
+// Pre-order / post-order tree traversal
 void ast_visit(AstNode *node, AstVisitor pre_visit, AstVisitor post_visit, void *ctx);
 
+// Introspection
 const char *ast_kind_name(AstKind kind);
 bool ast_kind_is_declaration(AstKind kind);
 
