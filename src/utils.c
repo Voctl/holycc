@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 
+// Create a new string buffer with a 256-byte initial capacity
 StringBuffer string_buffer_create(void) {
     StringBuffer sb = {0};
     sb.capacity = 256;
@@ -13,6 +14,7 @@ StringBuffer string_buffer_create(void) {
     return sb;
 }
 
+// Free the buffer's internal storage
 void string_buffer_destroy(StringBuffer *sb) {
     free(sb->data);
     sb->data = NULL;
@@ -20,6 +22,7 @@ void string_buffer_destroy(StringBuffer *sb) {
     sb->capacity = 0;
 }
 
+// Ensure capacity (grows by doubling if needed)
 bool string_buffer_reserve(StringBuffer *sb, size_t capacity) {
     if (capacity <= sb->capacity) return true;
     size_t new_cap = sb->capacity * 2;
@@ -79,6 +82,7 @@ char *string_buffer_release(StringBuffer *sb) {
     return result;
 }
 
+// Read entire file into a heap-allocated, null-terminated buffer
 char *read_file(const char *path, size_t *out_len) {
     FILE *f = fopen(path, "rb");
     if (!f) return NULL;
@@ -110,6 +114,7 @@ char *read_file(const char *path, size_t *out_len) {
     return buf;
 }
 
+// Write a buffer to a file (overwrite)
 bool write_file(const char *path, const char *data, size_t len) {
     FILE *f = fopen(path, "wb");
     if (!f) return false;
