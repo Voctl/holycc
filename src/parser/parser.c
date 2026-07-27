@@ -5,14 +5,16 @@
 #include <string.h>
 #include <errno.h>
 
+// Recursive-descent parser state
 struct Parser {
     Lexer *lexer;
     Diagnostics *diag;
-    Token current;
-    Token peek;
-    char *sourcedir;
+    Token current; // the token being examined
+    Token peek;    // one-token lookahead
+    char *sourcedir; // directory of the source file (for includes)
 };
 
+// Advance the parser to the next token (current ← peek, peek ← lexer)
 static void parser_advance(Parser *p) {
     p->current = p->peek;
     p->peek = lexer_next_token(p->lexer);
@@ -38,10 +40,12 @@ void parser_destroy(Parser *parser) {
     free(parser);
 }
 
+// Check if the current token is of the given kind
 static bool parser_check(Parser *p, TokenKind kind) {
     return p->current.kind == kind;
 }
 
+// If current token matches, consume it and return true
 static bool parser_match(Parser *p, TokenKind kind) {
     if (parser_check(p, kind)) {
         parser_advance(p);
@@ -50,6 +54,7 @@ static bool parser_match(Parser *p, TokenKind kind) {
     return false;
 }
 
+// Expect a token kind – consume it or emit an error
 static void parser_expect(Parser *p, TokenKind kind, const char *msg) {
     if (parser_check(p, kind)) {
         parser_advance(p);
@@ -80,6 +85,7 @@ static AstNode *parser_parse_stmt(Parser *p);
 static AstNode *parser_parse_block(Parser *p);
 static AstNode *parser_parse_decl(Parser *p);
 
+// Parse a primary expression (literal, identifier, grouping, array init)
 static AstNode *parser_parse_primary(Parser *p) {
     switch (p->current.kind) {
         case TOK_IDENTIFIER: {
@@ -183,6 +189,7 @@ static AstNode *parser_parse_primary(Parser *p) {
     }
 }
 
+// Parse postfix expressions (indexing, calls, member access, ++/--)
 static AstNode *parser_parse_postfix(Parser *p) {
     AstNode *expr = parser_parse_primary(p);
 
@@ -257,6 +264,7 @@ static AstNode *parser_parse_postfix(Parser *p) {
     }
 }
 
+// Parse prefix/unary expressions (-, !, ~, *, &, ++, --, sizeof, offset, cast)
 static AstNode *parser_parse_prefix(Parser *p) {
     switch (p->current.kind) {
         case TOK_MINUS:
@@ -377,6 +385,7 @@ static bool parser_is_assign_op(TokenKind kind) {
     }
 }
 
+// Parse binary expressions using precedence climbing
 static AstNode *parser_parse_binary(Parser *p, int min_prec) {
     AstNode *left = parser_parse_prefix(p);
 
@@ -440,10 +449,12 @@ static AstNode *parser_parse_binary(Parser *p, int min_prec) {
     return left;
 }
 
+// Top-level expression parser (entry point for expression parsing)
 static AstNode *parser_parse_expr(Parser *p) {
     return parser_parse_binary(p, 0);
 }
 
+// Parse a statement (if, while, for, switch, return, break, etc.)
 static AstNode *parser_parse_stmt(Parser *p) {
     parser_match(p, TOK_KW_NO_WARN);
     switch (p->current.kind) {
@@ -683,6 +694,7 @@ static AstNode *parser_parse_stmt(Parser *p) {
     }
 }
 
+// Parse a { ... } block statement
 static AstNode *parser_parse_block(Parser *p) {
     parser_expect(p, TOK_LBRACE, "{");
     AstNode *block = parser_make_node(p, AST_BLOCK);
@@ -695,6 +707,7 @@ static AstNode *parser_parse_block(Parser *p) {
     return block;
 }
 
+// Parse a type specification (named type + optional pointer indirections)
 static AstNode *parser_parse_type(Parser *p) {
     AstNode *type_node = parser_make_node(p, AST_NAMED_TYPE);
     type_node->data.string_value = NULL;
@@ -721,6 +734,7 @@ static AstNode *parser_parse_type(Parser *p) {
     return type_node;
 }
 
+// Parse a declaration (variable, function, function pointer)
 static AstNode *parser_parse_decl(Parser *p) {
     parser_match(p, TOK_KW_NO_WARN); // absorbed
     parser_match(p, TOK_KW_REG); // absorbed
@@ -840,6 +854,7 @@ static AstNode *parser_parse_decl(Parser *p) {
     return var;
 }
 
+// Parse a top-level construct (class, union, enum, include, import, define, #if, etc.)
 static AstNode *parser_parse_top_level(Parser *p) {
     switch (p->current.kind) {
         case TOK_KW_CLASS:
@@ -1129,6 +1144,7 @@ static AstNode *parser_parse_top_level(Parser *p) {
     }
 }
 
+// Parse the entire source file into a TRANSLATION_UNIT node
 AstNode *parser_parse_translation_unit(Parser *p) {
     AstNode *tu = ast_node_create(AST_TRANSLATION_UNIT, p->current.loc);
 
