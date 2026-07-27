@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Allocate a new AST node (zero-initialised)
 AstNode *ast_node_create(AstKind kind, SourceLocation loc) {
     AstNode *node = calloc(1, sizeof(AstNode));
     node->kind = kind;
@@ -10,6 +11,7 @@ AstNode *ast_node_create(AstKind kind, SourceLocation loc) {
     return node;
 }
 
+// Free a single node (frees strdup'd string_value if applicable)
 void ast_node_destroy(AstNode *node) {
     if (!node) return;
     if (node->kind == AST_STRING_LITERAL || node->kind == AST_IDENTIFIER ||
@@ -19,6 +21,7 @@ void ast_node_destroy(AstNode *node) {
     free(node);
 }
 
+// Recursively free an entire subtree
 void ast_node_destroy_tree(AstNode *root) {
     if (!root) return;
     AstNode *child = root->first_child;
@@ -30,6 +33,7 @@ void ast_node_destroy_tree(AstNode *root) {
     ast_node_destroy(root);
 }
 
+// Append a child to the parent's linked-list of children
 void ast_add_child(AstNode *parent, AstNode *child) {
     if (!parent || !child) return;
     child->parent = parent;
@@ -41,11 +45,13 @@ void ast_add_child(AstNode *parent, AstNode *child) {
     parent->last_child = child;
 }
 
+// Attach a type annotation node to a typed node (casts, etc.)
 void ast_set_type(AstNode *node, AstNode *type_node) {
     if (!node || !type_node) return;
     node->data.typed.type = type_node;
 }
 
+// Pre-order + post-order traversal (visitor pattern)
 void ast_visit(AstNode *node, AstVisitor pre_visit, AstVisitor post_visit, void *ctx) {
     if (!node) return;
 
@@ -126,6 +132,7 @@ static const char *ast_kind_names[AST_COUNT] = {
     [AST_PP_ELIF]               = "pp_elif",
 };
 
+// Deep-clone a subtree (strings are strdup'd, siblings are replicated)
 AstNode *ast_clone_node(const AstNode *node) {
     if (!node) return NULL;
     AstNode *clone = ast_node_create(node->kind, node->loc);
@@ -148,6 +155,7 @@ AstNode *ast_clone_node(const AstNode *node) {
     return clone;
 }
 
+// Return human-readable name for AST node kind
 const char *ast_kind_name(AstKind kind) {
     if (kind < AST_COUNT && ast_kind_names[kind]) {
         return ast_kind_names[kind];
@@ -155,6 +163,7 @@ const char *ast_kind_name(AstKind kind) {
     return "unknown";
 }
 
+// Check whether a node kind is a declaration (vs. statement/expression)
 bool ast_kind_is_declaration(AstKind kind) {
     switch (kind) {
         case AST_FUNC_DECL:
