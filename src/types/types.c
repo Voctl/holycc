@@ -12,6 +12,7 @@ Type *type_create(TypeKind kind) {
     return t;
 }
 
+// Recursively destroy a type and all types it references
 void type_destroy(Type *type) {
     if (!type) return;
     free(type->name);
@@ -56,6 +57,7 @@ void type_destroy(Type *type) {
     free(type);
 }
 
+// Set size and alignment for a builtin type
 static void type_setup_builtin(Type *t, uint32_t size, uint32_t align) {
     t->size = size;
     t->alignment = align;
@@ -166,6 +168,7 @@ Type *type_function(Type *return_type, FuncParam *params, bool variadic) {
     return t;
 }
 
+// Return human-readable name for a TypeKind
 const char *type_kind_name(TypeKind kind) {
     switch (kind) {
         case TYPE_VOID:        return "void";
@@ -193,6 +196,7 @@ const char *type_kind_name(TypeKind kind) {
     return "unknown";
 }
 
+// Map a HolyC type to its C17 type name (e.g. I64 → int64_t)
 const char *type_c_name(const Type *type) {
     switch (type->kind) {
         case TYPE_VOID:     return "void";
@@ -231,6 +235,7 @@ uint32_t type_alignment(const Type *type) {
     return type->alignment;
 }
 
+// Structural type equality (recursive for compound types)
 bool type_equals(const Type *a, const Type *b) {
     if (!a || !b) return false;
     if (a == b) return true;
@@ -268,6 +273,7 @@ bool type_equals(const Type *a, const Type *b) {
     }
 }
 
+// Check if type is an integer type (Char, I8–I64, U8–U64)
 bool type_is_integer(const Type *type) {
     switch (type->kind) {
         case TYPE_CHAR:
@@ -279,18 +285,22 @@ bool type_is_integer(const Type *type) {
     }
 }
 
+// Check if type is a floating-point type (F64 only)
 bool type_is_floating(const Type *type) {
     return type->kind == TYPE_F64;
 }
 
+// Check if type is numeric (integer or floating)
 bool type_is_numeric(const Type *type) {
     return type_is_integer(type) || type_is_floating(type);
 }
 
+// Check if type is scalar (numeric, pointer, or bool)
 bool type_is_scalar(const Type *type) {
     return type_is_numeric(type) || type->kind == TYPE_POINTER || type->kind == TYPE_BOOL;
 }
 
+// Check if type is an aggregate (struct, union, or array)
 bool type_is_aggregate(const Type *type) {
     return type->kind == TYPE_STRUCT || type->kind == TYPE_UNION ||
            type->kind == TYPE_ARRAY;
