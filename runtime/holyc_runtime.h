@@ -5,24 +5,30 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-void Print(const char *fmt, ...);
-void PrintLn(const char *fmt, ...);
+// I/O
+void Print(const char *fmt, ...);   // HolyC Print()
+void PrintLn(const char *fmt, ...); // Print with newline
 
+// Memory management
 void *MAlloc(uint64_t size);
 void Free(void *ptr);
 
+// String utilities
 uint64_t StrLen(const char *str);
 bool StrCompare(const char *a, const char *b);
 
+// Conversion
 int64_t AtoI(const char *str);
 double AtoF(const char *str);
 
+// Memory operations
 void MemSet(uint8_t *dst, uint8_t value, uint64_t count);
 void MemCpy(uint8_t *dst, const uint8_t *src, uint64_t count);
 int64_t MemCompare(const uint8_t *a, const uint8_t *b, uint64_t count);
 
+// Other
 uint64_t MSize(void *ptr);
-void CDelay(uint64_t ms);
+void CDelay(uint64_t ms);  // millisecond sleep
 int GetCh(void);
 void PutChar(char c);
 void Exit(int64_t code);
