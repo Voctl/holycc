@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+// CLI options parsed from argv
 typedef struct {
     const char *input_file;
     const char *output_file;
@@ -15,6 +16,7 @@ typedef struct {
     bool keep_c;
 } DriverOptions;
 
+// Entry point for the CLI – orchestrates the entire compilation pipeline
 int driver_main(int argc, char **argv);
 
 #endif
