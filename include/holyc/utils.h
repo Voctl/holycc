@@ -5,14 +5,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// Dynamic string buffer for incremental text building
 typedef struct {
     char *data;
     size_t length;
     size_t capacity;
 } StringBuffer;
 
+// Buffer lifecycle
 StringBuffer string_buffer_create(void);
 void string_buffer_destroy(StringBuffer *sb);
+
+// Append operations
 bool string_buffer_reserve(StringBuffer *sb, size_t capacity);
 void string_buffer_append_char(StringBuffer *sb, char c);
 void string_buffer_append_str(StringBuffer *sb, const char *str, size_t len);
@@ -20,8 +24,11 @@ void string_buffer_append_cstr(StringBuffer *sb, const char *str);
 void string_buffer_append_fmt(StringBuffer *sb, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
 void string_buffer_indent(StringBuffer *sb, int level);
+
+// Release ownership of the buffer's data (caller must free)
 char *string_buffer_release(StringBuffer *sb);
 
+// File I/O helpers
 char *read_file(const char *path, size_t *out_len);
 bool write_file(const char *path, const char *data, size_t len);
 
