@@ -17,6 +17,7 @@
 
 #define HOLYCC_VERSION "0.1.0"
 
+// Print CLI usage information
 static void print_usage(const char *prog) {
     printf("Usage: %s [options] <input.HC>\n", prog);
     printf("\nOptions:\n");
@@ -31,11 +32,13 @@ static void print_usage(const char *prog) {
     printf("  --version        Show version\n");
 }
 
+// Print version string
 static void print_version(void) {
     printf("holycc version %s\n", HOLYCC_VERSION);
     printf("HolyC to C17 transpiler\n");
 }
 
+// Dump all tokens from the lexer to stdout (for --tokens flag)
 static void print_tokens(Lexer *lexer) {
     for (;;) {
         Token t = lexer_next_token(lexer);
@@ -49,6 +52,7 @@ static void print_tokens(Lexer *lexer) {
     }
 }
 
+// Print a single AST node (used by print_ast for --ast flag)
 static void print_ast_node(AstNode *node, int depth, void *_unused) {
     (void)_unused;
     for (int i = 0; i < depth; i++) printf("  ");
@@ -78,6 +82,7 @@ static void print_ast_node(AstNode *node, int depth, void *_unused) {
     printf("\n");
 }
 
+// Dump the entire AST tree to stdout (for --ast flag)
 static void print_ast(AstNode *root) {
     if (!root) return;
     struct { AstNode *node; int depth; } stack[1024];
@@ -105,6 +110,7 @@ static void print_ast(AstNode *root) {
     }
 }
 
+// Invoke GCC to compile a .c file into a binary (links the runtime library)
 static bool compile_c_to_binary(const char *c_file, const char *out_file) {
     char cmd[2048];
     const char *runtime_lib = NULL;
@@ -149,6 +155,7 @@ static bool compile_c_to_binary(const char *c_file, const char *out_file) {
     return true;
 }
 
+// Entry point — parse CLI args, run the compiler pipeline, invoke GCC
 int driver_main(int argc, char **argv) {
     DriverOptions opts = {0};
     opts.input_file = NULL;
