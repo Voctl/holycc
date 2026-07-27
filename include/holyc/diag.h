@@ -7,13 +7,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// Severity levels for diagnostics
 typedef enum {
     DIAG_ERROR,
     DIAG_WARNING,
     DIAG_NOTE,
-    DIAG_ICE,
+    DIAG_ICE, // Internal Compiler Error
 } DiagnosticLevel;
 
+// A single diagnostic message
 typedef struct {
     const char *filename;
     uint32_t line;
@@ -23,18 +25,21 @@ typedef struct {
     const char *message;
 } Diagnostic;
 
+// Opaque list of diagnostics
 typedef struct DiagnosticList DiagnosticList;
 
+// Function-pointer interface for emitting diagnostics
 typedef struct {
     void (*error)(SourceLocation loc, const char *fmt, ...);
     void (*error_at)(const char *filename, uint32_t line, uint32_t col, const char *fmt, ...);
     void (*warning)(SourceLocation loc, const char *fmt, ...);
     void (*note)(SourceLocation loc, const char *fmt, ...);
     void (*ice)(const char *fmt, ...);
-    bool had_error;
-    DiagnosticList *list;
+    bool had_error;         // true once any error has been emitted
+    DiagnosticList *list;   // stored diagnostics
 } Diagnostics;
 
+// Create / destroy / query / print diagnostics
 Diagnostics diagnostics_create(void);
 void diagnostics_destroy(Diagnostics *diag);
 size_t diagnostics_count(const Diagnostics *diag);
