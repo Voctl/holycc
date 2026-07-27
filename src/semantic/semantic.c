@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Semantic analyser state — symbol table, current context, nesting depth
 struct Semantic {
     SymbolTable *symtab;
     Diagnostics *diag;
-    Type *current_func_return;
+    Type *current_func_return; // return type of enclosing function
     int loop_depth;
     int switch_depth;
 };
@@ -43,6 +44,7 @@ static bool semantic_is_assign_op(TokenKind kind) {
 static Type *semantic_analyze_expr(Semantic *s, AstNode *node);
 static void semantic_analyze_stmt(Semantic *s, AstNode *node);
 
+// Resolve an AST type node to an internal Type* (builtin, pointer, or named)
 static Type *semantic_resolve_type(Semantic *s, AstNode *node) {
     if (!node) return NULL;
 
@@ -87,6 +89,7 @@ static Type *semantic_resolve_type(Semantic *s, AstNode *node) {
     }
 }
 
+// Analyse an expression node — returns its Type and emits errors for type violations
 static Type *semantic_analyze_expr(Semantic *s, AstNode *node) {
     if (!node) return type_void();
 
@@ -220,6 +223,7 @@ static Type *semantic_analyze_expr(Semantic *s, AstNode *node) {
     }
 }
 
+// Analyse a statement — type-checks, registers symbols, manages scopes
 static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
     if (!node) return;
 
@@ -515,6 +519,7 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
     }
 }
 
+// Run semantic analysis on the entire AST (internal entry point)
 bool semantic_analyze(Semantic *semantic, AstNode *ast) {
     if (!ast || ast->kind != AST_TRANSLATION_UNIT) return false;
 
