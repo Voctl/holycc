@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
+// Keyword lookup entry — maps source text to a token kind
 typedef struct {
     const char *keyword;
     size_t length;
@@ -65,17 +66,18 @@ static const KeywordEntry keywords[] = {
 
 #define NUM_KEYWORDS (sizeof(keywords) / sizeof(keywords[0]))
 
+// Lexer state – position, peek buffer, line tracking
 struct Lexer {
     const char *filename;
-    const char *source;
-    const char *current;
-    const char *line_start;
+    const char *source;    // entire source text
+    const char *current;   // next character to read
+    const char *line_start; // start of current line (for diagnostics)
     size_t source_len;
-    uint32_t line;
-    uint32_t column;
-    Token peek;
+    uint32_t line;          // 1-indexed
+    uint32_t column;        // 1-indexed
+    Token peek;             // one-token lookahead
     bool has_peek;
-    SourceLocation token_loc;
+    SourceLocation token_loc; // location of the token being lexed
     Diagnostics *diag;
 };
 
@@ -192,6 +194,7 @@ static Token lexer_make_token(const Lexer *lexer, TokenKind kind,
     return t;
 }
 
+// Check whether an identifier matches a keyword; return TOK_IDENTIFIER if not
 static TokenKind lexer_ident_kind(const char *start, size_t length) {
     for (size_t i = 0; i < NUM_KEYWORDS; i++) {
         if (keywords[i].length == length &&
@@ -202,6 +205,7 @@ static TokenKind lexer_ident_kind(const char *start, size_t length) {
     return TOK_IDENTIFIER;
 }
 
+// Read a numeric literal (integer, hex, binary, or float)
 static Token lexer_read_number(Lexer *lexer) {
     const char *start = lexer->current - 1;
     bool has_dot = false;
@@ -267,6 +271,7 @@ static Token lexer_read_number(Lexer *lexer) {
     return lexer_make_token(lexer, TOK_INTEGER, start, length);
 }
 
+// Read a string or character literal (handles backslash escapes)
 static Token lexer_read_string(Lexer *lexer, char quote, TokenKind kind) {
     const char *start = lexer->current - 1;
     while (!lexer_is_eof(lexer) && lexer_peek_char(lexer) != quote) {
@@ -282,6 +287,7 @@ static Token lexer_read_string(Lexer *lexer, char quote, TokenKind kind) {
     return lexer_make_token(lexer, kind, start, length);
 }
 
+// Read an identifier or keyword (alphanumeric + underscores)
 static Token lexer_read_identifier(Lexer *lexer) {
     const char *start = lexer->current - 1;
     while (!lexer_is_eof(lexer) && (isalnum((unsigned char)lexer_peek_char(lexer)) ||
@@ -293,6 +299,7 @@ static Token lexer_read_identifier(Lexer *lexer) {
     return lexer_make_token(lexer, kind, start, length);
 }
 
+// Read a preprocessor directive (#if, #else, #endif, etc.)
 static Token lexer_read_preprocessor(Lexer *lexer) {
     const char *start = lexer->current - 1;
     while (!lexer_is_eof(lexer) && (isalpha((unsigned char)lexer_peek_char(lexer)) ||
@@ -321,6 +328,7 @@ static Token lexer_read_preprocessor(Lexer *lexer) {
     return lexer_make_token(lexer, kind, start, length);
 }
 
+// Consume and return the next token from the source stream
 Token lexer_next_token(Lexer *lexer) {
     if (lexer->has_peek) {
         lexer->has_peek = false;
@@ -455,6 +463,7 @@ Token lexer_next_token(Lexer *lexer) {
     }
 }
 
+// Peek at the next token without consuming it
 Token lexer_peek_token(Lexer *lexer) {
     if (!lexer->has_peek) {
         lexer->peek = lexer_next_token(lexer);
