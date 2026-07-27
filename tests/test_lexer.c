@@ -7,6 +7,7 @@
 static int test_count = 0;
 static int pass_count = 0;
 
+// Test assertion – increments counters and prints PASS/FAIL
 static void check(const char *name, bool condition) {
     test_count++;
     if (condition) {
@@ -17,6 +18,7 @@ static void check(const char *name, bool condition) {
     }
 }
 
+// Lex a source string and verify each token's kind matches expectations
 static void check_token_kind(const char *source, TokenKind expected_kinds[], int count) {
     Diagnostics diag = diagnostics_create();
     Lexer *lexer = lexer_create("-", source, strlen(source));
@@ -36,6 +38,7 @@ static void check_token_kind(const char *source, TokenKind expected_kinds[], int
     diagnostics_destroy(&diag);
 }
 
+// Test identifier tokenisation
 static void test_identifiers(void) {
     printf("\n--- Identifiers ---\n");
     TokenKind kinds[] = {TOK_IDENTIFIER, TOK_IDENTIFIER, TOK_IDENTIFIER};
@@ -44,6 +47,7 @@ static void test_identifiers(void) {
     check_token_kind("x y1 z_2", (TokenKind[]){TOK_IDENTIFIER, TOK_IDENTIFIER, TOK_IDENTIFIER}, 3);
 }
 
+// Test that all HolyC keywords produce the correct token kinds
 static void test_keywords(void) {
     printf("\n--- Keywords ---\n");
     check_token_kind("I64", (TokenKind[]){TOK_KW_I64}, 1);
@@ -57,6 +61,7 @@ static void test_keywords(void) {
     check_token_kind("NULL TRUE FALSE", (TokenKind[]){TOK_KW_NULL, TOK_KW_TRUE, TOK_KW_FALSE}, 3);
 }
 
+// Test integer literal tokenisation (dec, hex, binary)
 static void test_integers(void) {
     printf("\n--- Integer Literals ---\n");
     check_token_kind("42", (TokenKind[]){TOK_INTEGER}, 1);
@@ -65,6 +70,7 @@ static void test_integers(void) {
     check_token_kind("1000000", (TokenKind[]){TOK_INTEGER}, 1);
 }
 
+// Test float literal tokenisation
 static void test_floats(void) {
     printf("\n--- Float Literals ---\n");
     check_token_kind("3.14", (TokenKind[]){TOK_FLOAT}, 1);
@@ -72,6 +78,7 @@ static void test_floats(void) {
     check_token_kind("1e10 2.5e-3", (TokenKind[]){TOK_FLOAT, TOK_FLOAT}, 2);
 }
 
+// Test string literal tokenisation
 static void test_strings(void) {
     printf("\n--- String Literals ---\n");
     check_token_kind("\"hello\"", (TokenKind[]){TOK_STRING}, 1);
@@ -79,12 +86,14 @@ static void test_strings(void) {
     check_token_kind("\"abc\" \"def\"", (TokenKind[]){TOK_STRING, TOK_STRING}, 2);
 }
 
+// Test character literal tokenisation
 static void test_chars(void) {
     printf("\n--- Character Literals ---\n");
     check_token_kind("'a'", (TokenKind[]){TOK_CHARACTER}, 1);
     check_token_kind("'\\n'", (TokenKind[]){TOK_CHARACTER}, 1);
 }
 
+// Test operator tokenisation (arithmetic, logical, bitwise, ++, --, ->)
 static void test_operators(void) {
     printf("\n--- Operators ---\n");
     check_token_kind("+ - * / %", (TokenKind[]){
@@ -99,6 +108,7 @@ static void test_operators(void) {
         TOK_INCREMENT, TOK_DECREMENT, TOK_ARROW}, 3);
 }
 
+// Test compound assignment tokenisation (+=, -=, etc.)
 static void test_assignment_ops(void) {
     printf("\n--- Assignment Operators ---\n");
     check_token_kind("= += -= *= /= %=", (TokenKind[]){
@@ -109,6 +119,7 @@ static void test_assignment_ops(void) {
         TOK_LSHIFT_ASSIGN, TOK_RSHIFT_ASSIGN}, 5);
 }
 
+// Test punctuation tokenisation (brackets, commas, etc.)
 static void test_punctuation(void) {
     printf("\n--- Punctuation ---\n");
     check_token_kind("( ) { } [ ]", (TokenKind[]){
@@ -118,6 +129,7 @@ static void test_punctuation(void) {
         TOK_COMMA, TOK_DOT, TOK_COLON, TOK_SEMICOLON, TOK_QUESTION}, 5);
 }
 
+// Test that comments are properly skipped
 static void test_comments(void) {
     printf("\n--- Comments ---\n");
     check_token_kind("// comment\n42", (TokenKind[]){TOK_INTEGER}, 1);
@@ -126,6 +138,7 @@ static void test_comments(void) {
     check_token_kind("x // end of line comment\n y", (TokenKind[]){TOK_IDENTIFIER, TOK_IDENTIFIER}, 2);
 }
 
+// Test that token content (start pointer + length) is correct
 static void test_token_content(void) {
     printf("\n--- Token Content ---\n");
     Diagnostics diag = diagnostics_create();
@@ -149,6 +162,7 @@ static void test_token_content(void) {
     diagnostics_destroy(&diag);
 }
 
+// Test that source locations track line/column correctly across newlines
 static void test_source_location(void) {
     printf("\n--- Source Location ---\n");
     Diagnostics diag = diagnostics_create();
