@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Create a symbol table with a single global scope
 SymbolTable *symbol_table_create(Diagnostics *diag) {
     SymbolTable *table = calloc(1, sizeof(SymbolTable));
     table->diag = diag;
@@ -12,6 +13,7 @@ SymbolTable *symbol_table_create(Diagnostics *diag) {
     return table;
 }
 
+// Free all symbols (and their names) in a scope
 static void scope_free_symbols(Scope *scope) {
     Symbol *sym = scope->first_symbol;
     while (sym) {
@@ -22,12 +24,14 @@ static void scope_free_symbols(Scope *scope) {
     }
 }
 
+// Free a scope and its symbols
 static void scope_free(Scope *scope) {
     if (!scope) return;
     scope_free_symbols(scope);
     free(scope);
 }
 
+// Destroy the entire symbol table (all scopes and symbols)
 void symbol_table_destroy(SymbolTable *table) {
     if (!table) return;
     Scope *scope = table->global_scope;
@@ -39,6 +43,7 @@ void symbol_table_destroy(SymbolTable *table) {
     free(table);
 }
 
+// Push a new nested scope (becomes current_scope)
 void scope_push(SymbolTable *table, ScopeKind kind) {
     Scope *scope = calloc(1, sizeof(Scope));
     scope->kind = kind;
@@ -46,6 +51,7 @@ void scope_push(SymbolTable *table, ScopeKind kind) {
     table->current_scope = scope;
 }
 
+// Pop the current scope and restore its parent (frees the scope)
 void scope_pop(SymbolTable *table) {
     if (!table->current_scope) return;
     Scope *parent = table->current_scope->parent;
@@ -62,6 +68,7 @@ Scope *scope_global(SymbolTable *table) {
     return table->global_scope;
 }
 
+// Add a symbol to the current scope (with duplicate detection)
 Symbol *symbol_add(SymbolTable *table, const char *name, SymbolKind kind,
                    Type *type, SourceLocation loc) {
     Scope *scope = table->current_scope;
@@ -97,6 +104,7 @@ Symbol *symbol_add(SymbolTable *table, const char *name, SymbolKind kind,
     return sym;
 }
 
+// Look up a name by walking the scope chain (current → global)
 Symbol *symbol_lookup(SymbolTable *table, const char *name) {
     Scope *scope = table->current_scope;
     while (scope) {
@@ -112,6 +120,7 @@ Symbol *symbol_lookup(SymbolTable *table, const char *name) {
     return NULL;
 }
 
+// Look up a name in the current scope only
 Symbol *symbol_lookup_current_scope(SymbolTable *table, const char *name) {
     Scope *scope = table->current_scope;
     Symbol *sym = scope->first_symbol;
