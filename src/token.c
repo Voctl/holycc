@@ -1,9 +1,10 @@
 // Token kind names and spellings table
 #include "holyc/token.h"
 
+// Maps each TokenKind to its human-readable name and source spelling
 typedef struct {
-    const char *name;
-    const char *spelling;
+    const char *name;     // e.g. "I64"
+    const char *spelling; // e.g. "I64"
 } TokenInfo;
 
 static const TokenInfo token_table[TOK_COUNT] = {
@@ -122,6 +123,7 @@ static const TokenInfo token_table[TOK_COUNT] = {
 #undef T
 };
 
+// Return human-readable name for a token kind
 const char *token_kind_name(TokenKind kind) {
     if (kind < TOK_COUNT) {
         return token_table[kind].name;
@@ -129,6 +131,7 @@ const char *token_kind_name(TokenKind kind) {
     return "unknown";
 }
 
+// Return the source-text spelling for a token kind
 const char *token_kind_spelling(TokenKind kind) {
     if (kind < TOK_COUNT) {
         return token_table[kind].spelling;
