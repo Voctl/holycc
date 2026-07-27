@@ -6,6 +6,7 @@
 
 #define MAX_DIAGNOSTICS 256
 
+// Fixed-capacity list of diagnostic messages
 typedef struct DiagnosticList {
     Diagnostic items[MAX_DIAGNOSTICS];
     size_t count;
@@ -17,6 +18,7 @@ static void diag_warning(SourceLocation loc, const char *fmt, ...);
 static void diag_note(SourceLocation loc, const char *fmt, ...);
 static void diag_ice(const char *fmt, ...);
 
+// Thread-local (single-threaded) pointer — functions use this implicitly
 static Diagnostics *active_diag = NULL;
 
 Diagnostics diagnostics_create(void) {
@@ -62,6 +64,7 @@ void diagnostics_clear(Diagnostics *diag) {
     diag->had_error = false;
 }
 
+// Store a single diagnostic in the list (copies the formatted message)
 static void diag_emit(Diagnostics *diag, DiagnosticLevel level, SourceLocation loc,
                       const char *fmt, va_list args) {
     if (!diag->list || diag->list->count >= MAX_DIAGNOSTICS) {
@@ -124,6 +127,7 @@ static void diag_ice(const char *fmt, ...) {
     abort();
 }
 
+// Print all collected diagnostics to stderr with source snippets
 void diagnostics_print(const Diagnostics *diag, const char *source) {
     if (!diag->list) return;
 
