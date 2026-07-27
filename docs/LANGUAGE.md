@@ -932,6 +932,120 @@ I64 ch = GetCh();         // read character
 
 ---
 
+## Common Patterns
+
+### Hello, World — Three Ways
+
+```c
+// Way 1: top-level code (no main)
+Print("Hello, world!\n");
+
+// Way 2: explicit main
+I64 main() {
+    Print("Hello, world!\n");
+    return 0;
+}
+
+// Way 3: string auto-print
+"Hello, world!\n";
+```
+
+### Reading Command-Line Arguments
+
+```c
+// HolyC variadic: first arg is argc, rest are argv
+I64 main(I64 argc) {
+    for (I64 i = 0; i < argc; i++) {
+        Print("arg[%lld] = %lld\n", i, argv[i]);
+    }
+    return 0;
+}
+```
+
+### Using Classes
+
+```c
+class Vec2 {
+    I64 x;
+    I64 y;
+    I64 Length() {
+        return x*x + y*y;
+    }
+};
+
+Vec2 v;
+v.x = 3;
+v.y = 4;
+Print("length = %lld\n", v.Length());
+```
+
+### Error Handling with Try/Catch
+
+```c
+try {
+    throw 42;
+} catch (I64 val) {
+    Print("caught %lld\n", val);
+}
+```
+
+---
+
+## Implementation Limits
+
+| Limit | Value |
+|---|---|
+| Max diagnostics stored | 256 |
+| Max AST depth | Unbounded (heap) |
+| Max nested includes | Unbounded (recursion) |
+| Max array dimensions | Unbounded |
+| Max switch range size | Unbounded |
+| Max function parameters | Unbounded |
+| Max identifier length | Unbounded |
+| Max string literal length | Unbounded |
+| Max source file size | Unbounded (memory) |
+| Max token length | Unbounded |
+| Max scope nesting | Unbounded (heap) |
+| Max variadic args | 64 |
+
+---
+
+## Compiler Behaviour Notes
+
+### String Literal Memory
+
+String literals in generated C are stored as string constants. The runtime does not manage string literal memory — they are read-only.
+
+### Integer Type Promotion
+
+HolyC does not have implicit integer promotion rules like C. All integer literals are `I64` by default. Operations between different integer types keep the left-hand type unless one operand is floating, in which case the result is `F64`.
+
+### The `NULL` Keyword
+
+`NULL` in HolyC is a pointer-typed constant (equivalent to `(void*)0`). It can be assigned to any pointer type without explicit cast.
+
+### Boolean Context
+
+Unlike C, HolyC does not treat non-zero integers as "true" in boolean contexts. Comparisons produce `Bool` values, and `if`/`while` conditions must be `Bool`-typed. However, the code generator currently emits C `if`/`while` which do accept any scalar.
+
+### Switch Semantics
+
+HolyC switches do NOT fall through automatically (unlike C). Each `case:` body ends the case block. The code generator emits each case separately, and the structure of case entries in the dispatched AST naturally prevents fall-through without explicit `break` insertion.
+
+### `continue` Warning
+
+`continue` is not part of standard HolyC (Terry A. Davis used `goto` for loop continuation). `holycc` accepts `continue` but emits a warning suggesting `goto` instead.
+
+### Class Method Dispatch
+
+Class methods are emitted as static functions named `ClassName_MethodName` that take a `ClassName *this` as the first parameter. There is no virtual dispatch or inheritance — HolyC classes are essentially structs with associated functions.
+
+### Top-Level Code Wrapping
+
+When the source contains statements outside any function, the code generator wraps them in a synthetic `int main()` function. This wrapping happens in declaration order: first all function/type declarations, then the synthetic `main()` body containing the top-level statements.
+
+---
+
 ## License
 
 HolyC is the language of TempleOS, created by Terry A. Davis.
