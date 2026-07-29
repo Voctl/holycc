@@ -115,3 +115,54 @@ int SPrint(char *buf, const char *fmt, ...) {
     va_end(args);
     return ret;
 }
+
+// ---------------------------------------------------------------------------
+// Math library — thin wrappers around libm
+// ---------------------------------------------------------------------------
+#include <math.h>
+
+// Trigonometric
+double Sin(double x)  { return sin(x);  }
+double Cos(double x)  { return cos(x);  }
+double Tan(double x)  { return tan(x);  }
+
+// Inverse trigonometric
+double ASin(double x)           { return asin(x);       }
+double ACos(double x)           { return acos(x);       }
+double ATan(double x)           { return atan(x);       }
+double ATan2(double y, double x){ return atan2(y, x);   }
+
+// Hyperbolic
+double SinH(double x) { return sinh(x); }
+double CosH(double x) { return cosh(x); }
+double TanH(double x) { return tanh(x); }
+
+// Exponential / power / logarithm
+double Exp(double x)              { return exp(x);        }
+double Pow(double base, double e) { return pow(base, e);  }
+double Sqrt(double x)             { return sqrt(x);       }
+double Cbrt(double x)             { return cbrt(x);       }
+double Log(double x)              { return log(x);        }
+double Log2(double x)             { return log2(x);       }
+double Log10(double x)            { return log10(x);      }
+
+// Rounding
+double Floor(double x) { return floor(x); }
+double Ceil(double x)  { return ceil(x);  }
+double Round(double x) { return round(x); }
+double Trunc(double x) { return trunc(x); }
+
+// Absolute value
+double  FAbs(double x)  { return fabs(x);       }
+int64_t Abs(int64_t x)  { return x < 0 ? -x : x; }
+
+// Min / Max  (branchless-friendly for integers)
+double  FMin(double  a, double  b) { return a < b ? a : b; }
+double  FMax(double  a, double  b) { return a > b ? a : b; }
+int64_t Min(int64_t  a, int64_t b) { return a < b ? a : b; }
+int64_t Max(int64_t  a, int64_t b) { return a > b ? a : b; }
+
+// Misc
+double Hypot(double a, double b)  { return hypot(a, b);  }
+double FMod(double x, double y)   { return fmod(x, y);   }
+
