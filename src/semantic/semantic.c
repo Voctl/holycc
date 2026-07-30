@@ -92,6 +92,25 @@ static Type *semantic_resolve_type(Semantic *s, AstNode *node) {
             }
             return type_array(base, length);
         }
+        case AST_FUNC_POINTER_TYPE: {
+            AstNode *ret_node = node->first_child;
+            Type *return_type = semantic_resolve_type(s, ret_node);
+            FuncParam *params = NULL;
+            FuncParam **last = &params;
+            AstNode *p = ret_node ? ret_node->next : NULL;
+            while (p && p->kind == AST_FUNC_PARAM) {
+                AstNode *ptype = p->first_child;
+                Type *pt = semantic_resolve_type(s, ptype);
+                AstNode *pname = ptype ? ptype->next : NULL;
+                FuncParam *fp = calloc(1, sizeof(FuncParam));
+                fp->name = (pname && pname->kind == AST_IDENTIFIER) ? strdup(pname->data.string_value) : NULL;
+                fp->type = pt;
+                *last = fp;
+                last = &fp->next;
+                p = p->next;
+            }
+            return type_pointer(type_function(return_type, params, false));
+        }
         default:
             return NULL;
     }
