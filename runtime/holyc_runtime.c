@@ -50,9 +50,9 @@ bool StrCompare(const char *a, const char *b) {
     return *a == *b;
 }
 
-// HolyC AtoI – string to int64_t
+// HolyC AtoI – string to int64_t (auto-detect base: 0x=hex, 0b=binary, 0=octal)
 int64_t AtoI(const char *str) {
-    return (int64_t)strtoll(str, NULL, 10);
+    return (int64_t)strtoll(str, NULL, 0);
 }
 
 // HolyC AtoF – string to double
