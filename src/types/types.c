@@ -71,7 +71,7 @@ Type *type_void(void) {
 
 Type *type_u0(void) {
     Type *t = type_create(TYPE_U0);
-    type_setup_builtin(t, 0, 0);
+    type_setup_builtin(t, 0, 1);
     return t;
 }
 
