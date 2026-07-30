@@ -84,6 +84,7 @@ static AstNode *parser_parse_expr(Parser *p);
 static AstNode *parser_parse_stmt(Parser *p);
 static AstNode *parser_parse_block(Parser *p);
 static AstNode *parser_parse_decl(Parser *p);
+static AstNode *parser_parse_type(Parser *p);
 
 // Parse a primary expression (literal, identifier, grouping, array init)
 static AstNode *parser_parse_primary(Parser *p) {
@@ -135,15 +136,26 @@ static AstNode *parser_parse_primary(Parser *p) {
             size_t len = p->current.length;
             const char *start = p->current.start;
             if (len >= 3 && start[1] == '\\') {
-                switch (start[2]) {
-                    case 'n': node->data.int_value = 10; break;
-                    case 't': node->data.int_value = 9; break;
-                    case 'r': node->data.int_value = 13; break;
-                    case '0': node->data.int_value = 0; break;
-                    case '\\': node->data.int_value = '\\'; break;
-                    case '\'': node->data.int_value = '\''; break;
-                    case '"': node->data.int_value = '"'; break;
-                    default: node->data.int_value = (uint64_t)start[2]; break;
+                if (start[2] == 'x' && len >= 5) {
+                    char hex[3] = {start[3], start[4], '\0'};
+                    node->data.int_value = (uint64_t)strtoul(hex, NULL, 16);
+                } else if (start[2] >= '0' && start[2] <= '7') {
+                    char oct[4] = {0};
+                    int oi = 0;
+                    for (size_t i = 2; i < len - 1 && oi < 3 && start[i] >= '0' && start[i] <= '7'; i++)
+                        oct[oi++] = start[i];
+                    node->data.int_value = (uint64_t)strtoul(oct, NULL, 8);
+                } else {
+                    switch (start[2]) {
+                        case 'n': node->data.int_value = 10; break;
+                        case 't': node->data.int_value = 9; break;
+                        case 'r': node->data.int_value = 13; break;
+                        case '0': node->data.int_value = 0; break;
+                        case '\\': node->data.int_value = '\\'; break;
+                        case '\'': node->data.int_value = '\''; break;
+                        case '"': node->data.int_value = '"'; break;
+                        default: node->data.int_value = (uint64_t)start[2]; break;
+                    }
                 }
             } else if (len >= 3) {
                 node->data.int_value = (uint64_t)start[1];
@@ -301,10 +313,10 @@ static AstNode *parser_parse_prefix(Parser *p) {
         case TOK_KW_SIZEOF: {
             parser_advance(p);
             AstNode *node = parser_make_node(p, AST_SIZEOF_EXPR);
-            if (parser_match(p, TOK_LPAREN) && parser_is_type_keyword(p->current.kind)) {
-                AstNode *type_node = parser_make_node(p, AST_NAMED_TYPE);
-                type_node->data.string_value = strndup(p->current.start, p->current.length);
-                parser_advance(p);
+            if (parser_match(p, TOK_LPAREN) && (parser_is_type_keyword(p->current.kind) ||
+                p->current.kind == TOK_KW_CLASS || p->current.kind == TOK_KW_UNION ||
+                p->current.kind == TOK_KW_ENUM || p->current.kind == TOK_IDENTIFIER)) {
+                AstNode *type_node = parser_parse_type(p);
                 ast_add_child(node, type_node);
                 parser_expect(p, TOK_RPAREN, ")");
             } else if (parser_check(p, TOK_LPAREN)) {
@@ -721,15 +733,31 @@ static AstNode *parser_parse_type(Parser *p) {
     AstNode *type_node = parser_make_node(p, AST_NAMED_TYPE);
     type_node->data.string_value = NULL;
 
-    if (parser_is_type_keyword(p->current.kind) ||
-        p->current.kind == TOK_KW_CLASS ||
-        p->current.kind == TOK_KW_UNION ||
-        p->current.kind == TOK_IDENTIFIER) {
+    if (parser_is_type_keyword(p->current.kind)) {
         type_node->data.string_value = strndup(p->current.start, p->current.length);
         parser_advance(p);
-    } else if (p->current.kind == TOK_KW_ENUM) {
+    } else if (p->current.kind == TOK_KW_CLASS ||
+               p->current.kind == TOK_KW_UNION ||
+               p->current.kind == TOK_KW_ENUM) {
+        const char *kw = (p->current.kind == TOK_KW_CLASS) ? "class" :
+                         (p->current.kind == TOK_KW_UNION) ? "union" : "enum";
         parser_advance(p);
-        type_node->data.string_value = strdup("enum");
+        if (p->current.kind == TOK_IDENTIFIER) {
+            size_t kw_len = strlen(kw);
+            size_t name_len = p->current.length;
+            char *combined = malloc(kw_len + 1 + name_len + 1);
+            memcpy(combined, kw, kw_len);
+            combined[kw_len] = ' ';
+            memcpy(combined + kw_len + 1, p->current.start, name_len);
+            combined[kw_len + 1 + name_len] = '\0';
+            type_node->data.string_value = combined;
+            parser_advance(p);
+        } else {
+            type_node->data.string_value = strdup(kw);
+        }
+    } else if (p->current.kind == TOK_IDENTIFIER) {
+        type_node->data.string_value = strndup(p->current.start, p->current.length);
+        parser_advance(p);
     } else {
         type_node->data.string_value = strdup("void");
     }
@@ -764,7 +792,6 @@ static AstNode *parser_parse_decl(Parser *p) {
         parser_expect(p, TOK_IDENTIFIER, "function pointer name");
         AstNode *fp_name_node = ast_node_create(AST_IDENTIFIER, fp_name.loc);
         fp_name_node->data.string_value = strndup(fp_name.start, fp_name.length);
-        ast_add_child(fp_type, fp_name_node);
         parser_expect(p, TOK_RPAREN, ")");
         parser_expect(p, TOK_LPAREN, "(");
 
