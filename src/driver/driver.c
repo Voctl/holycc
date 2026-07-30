@@ -362,7 +362,9 @@ int driver_main(int argc, char **argv) {
             fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
         }
     } else if (opts.compile_run) {
-        bool compiled = compile_c_to_binary(c_file, c_file);
+        char tmp_exe[1024];
+        snprintf(tmp_exe, sizeof(tmp_exe), "%s.exe", c_file);
+        bool compiled = compile_c_to_binary(c_file, tmp_exe);
         if (!compiled) {
             free(auto_c);
             free(auto_exe);
@@ -377,12 +379,13 @@ int driver_main(int argc, char **argv) {
             free(source);
             return 1;
         }
-        fprintf(stderr, "Compiled: %s\n", c_file);
-        fprintf(stderr, "Running: %s\n", c_file);
+        fprintf(stderr, "Compiled: %s\n", tmp_exe);
+        fprintf(stderr, "Running: %s\n", tmp_exe);
         fprintf(stderr, "---\n");
         char run_cmd[2048];
-        snprintf(run_cmd, sizeof(run_cmd), "\"%s\"", c_file);
+        snprintf(run_cmd, sizeof(run_cmd), "\"%s\"", tmp_exe);
         int run_ret = system(run_cmd);
+        unlink(tmp_exe);
         fprintf(stderr, "---\nExit: %d\n", WEXITSTATUS(run_ret));
     }
 
