@@ -228,6 +228,11 @@ static Token lexer_read_number(Lexer *lexer) {
             } else if (next == 'b' || next == 'B') {
                 is_bin = true;
                 lexer_advance(lexer);
+                if (!lexer_is_eof(lexer) &&
+                    lexer_peek_char(lexer) != '0' && lexer_peek_char(lexer) != '1') {
+                    if (lexer->diag)
+                        lexer->diag->error(lexer_loc(lexer), "invalid binary digit '%c'", lexer_peek_char(lexer));
+                }
                 while (!lexer_is_eof(lexer) &&
                        (lexer_peek_char(lexer) == '0' || lexer_peek_char(lexer) == '1')) {
                     lexer_advance(lexer);
