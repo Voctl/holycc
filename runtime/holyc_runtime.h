@@ -32,7 +32,7 @@ void CDelay(uint64_t ms);  // millisecond sleep
 int GetCh(void);
 void PutChar(char c);
 void Exit(int64_t code);
-int SPrint(char *buf, const char *fmt, ...);
+int SPrint(char *buf, uint64_t size, const char *fmt, ...);
 
 // ---------------------------------------------------------------------------
 // Math library  (all operate on F64 / double)

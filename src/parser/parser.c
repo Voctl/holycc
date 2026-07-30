@@ -98,7 +98,10 @@ static AstNode *parser_parse_primary(Parser *p) {
             AstNode *node = parser_make_node(p, AST_INTEGER_LITERAL);
             char *str = strndup(p->current.start, p->current.length);
             errno = 0;
-            node->data.int_value = (uint64_t)strtoull(str, NULL, 0);
+            int base = 0;
+            if (str[0] == '0' && (str[1] == 'b' || str[1] == 'B'))
+                base = 2;
+            node->data.int_value = (uint64_t)strtoull(str + (base == 2 ? 2 : 0), NULL, base);
             if (errno == ERANGE) {
                 p->diag->error(p->current.loc, "integer literal overflow");
             }
@@ -120,7 +123,10 @@ static AstNode *parser_parse_primary(Parser *p) {
         }
         case TOK_STRING: {
             AstNode *node = parser_make_node(p, AST_STRING_LITERAL);
-            node->data.string_value = strndup(p->current.start + 1, p->current.length - 2);
+            if (p->current.length < 2)
+                node->data.string_value = strdup("");
+            else
+                node->data.string_value = strndup(p->current.start + 1, p->current.length - 2);
             parser_advance(p);
             return node;
         }
@@ -500,14 +506,17 @@ static AstNode *parser_parse_stmt(Parser *p) {
             parser_advance(p);
             AstNode *node = parser_make_node(p, AST_FOR_STMT);
             parser_expect(p, TOK_LPAREN, "(");
+            bool init_is_decl = false;
             if (parser_check(p, TOK_SEMICOLON)) {
                 ast_add_child(node, parser_make_node(p, AST_NONE));
             } else if (parser_is_type_keyword(p->current.kind)) {
                 ast_add_child(node, parser_parse_decl(p));
+                init_is_decl = true;
             } else {
                 ast_add_child(node, parser_parse_expr(p));
             }
-            parser_expect(p, TOK_SEMICOLON, ";");
+            if (!init_is_decl)
+                parser_expect(p, TOK_SEMICOLON, ";");
             if (parser_check(p, TOK_SEMICOLON)) {
                 ast_add_child(node, parser_make_node(p, AST_NONE));
             } else {

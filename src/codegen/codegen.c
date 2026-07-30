@@ -116,7 +116,7 @@ static void codegen_emit_runtime_protos(CodeGen *cg) {
       "int GetCh(void);\n"
       "void PutChar(char c);\n"
       "void Exit(int64_t code);\n"
-      "int SPrint(char *buf, const char *fmt, ...);\n\n"
+      "int SPrint(char *buf, uint64_t size, const char *fmt, ...);\n\n"
       "// Math library\n"
       "double Sin(double x);\n"
       "double Cos(double x);\n"
@@ -415,11 +415,20 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
 
   case AST_CAST_EXPR: {
     string_buffer_append_cstr(&cg->buf, "((");
-    if (node->first_child && node->first_child->kind == AST_NAMED_TYPE) {
-      codegen_emit_expr(cg, node->first_child);
+    AstNode *type_node = node->first_child;
+    if (type_node) {
+      if (type_node->kind == AST_NAMED_TYPE) {
+        codegen_emit_expr(cg, type_node);
+      } else if (type_node->kind == AST_POINTER_TYPE) {
+        AstNode *base = type_node->first_child;
+        if (base && base->kind == AST_NAMED_TYPE) {
+          string_buffer_append_cstr(&cg->buf, codegen_map_type_name(base->data.string_value));
+        }
+        string_buffer_append_cstr(&cg->buf, "*");
+      }
     }
     string_buffer_append_cstr(&cg->buf, ")");
-    codegen_emit_expr(cg, node->first_child ? node->first_child->next : NULL);
+    codegen_emit_expr(cg, type_node ? type_node->next : NULL);
     string_buffer_append_char(&cg->buf, ')');
     break;
   }
@@ -675,6 +684,14 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       string_buffer_append_cstr(
           &cg->buf, codegen_map_type_name(type_node->data.string_value));
       string_buffer_append_char(&cg->buf, ' ');
+    } else if (type_node && type_node->kind == AST_POINTER_TYPE) {
+      AstNode *base = type_node->first_child;
+      if (base && base->kind == AST_NAMED_TYPE) {
+        string_buffer_append_cstr(
+            &cg->buf, codegen_map_type_name(base->data.string_value));
+        string_buffer_append_char(&cg->buf, ' ');
+      }
+      string_buffer_append_cstr(&cg->buf, "*");
     } else if (type_node && type_node->kind == AST_ARRAY_TYPE) {
       AstNode *elem_type = type_node->first_child;
       while (elem_type && elem_type->kind == AST_ARRAY_TYPE) {
@@ -774,13 +791,23 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
     AstNode *init = node->first_child;
     if (init && init->kind != AST_NONE) {
       if (init->kind == AST_VAR_DECL) {
-        codegen_emit_stmt(cg, init);
+        AstNode *type_node = init->first_child;
+        AstNode *name_node = type_node ? type_node->next : NULL;
+        AstNode *var_init = name_node ? name_node->next : NULL;
+        if (type_node && type_node->kind == AST_NAMED_TYPE) {
+          string_buffer_append_cstr(&cg->buf, codegen_map_type_name(type_node->data.string_value));
+          string_buffer_append_char(&cg->buf, ' ');
+        }
+        codegen_emit_expr(cg, name_node);
+        if (var_init) {
+          string_buffer_append_cstr(&cg->buf, " = ");
+          codegen_emit_expr(cg, var_init);
+        }
       } else {
         codegen_emit_expr(cg, init);
       }
     }
-    string_buffer_append_char(&cg->buf, ';');
-    string_buffer_append_char(&cg->buf, ' ');
+    string_buffer_append_cstr(&cg->buf, "; ");
     AstNode *cond = init ? init->next : NULL;
     if (cond && cond->kind != AST_NONE) {
       codegen_emit_expr(cg, cond);

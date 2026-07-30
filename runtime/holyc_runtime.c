@@ -107,11 +107,11 @@ void Exit(int64_t code) {
     exit((int)code);
 }
 
-// HolyC SPrint – sprintf wrapper
-int SPrint(char *buf, const char *fmt, ...) {
+// HolyC SPrint – snprintf wrapper (safe bounded version)
+int SPrint(char *buf, uint64_t size, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    int ret = vsprintf(buf, fmt, args);
+    int ret = vsnprintf(buf, size, fmt, args);
     va_end(args);
     return ret;
 }

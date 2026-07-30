@@ -42,6 +42,7 @@ typedef struct {
 // Create / destroy / query / print diagnostics
 Diagnostics diagnostics_create(void);
 void diagnostics_destroy(Diagnostics *diag);
+void diagnostics_set_active(Diagnostics *diag);
 size_t diagnostics_count(const Diagnostics *diag);
 const Diagnostic *diagnostics_get(const Diagnostics *diag, size_t index);
 void diagnostics_print(const Diagnostics *diag, const char *source);

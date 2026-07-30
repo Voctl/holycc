@@ -98,7 +98,7 @@ static void print_ast(AstNode *root) {
 
         print_ast_node(node, depth, NULL);
 
-        AstNode *child = node->last_child;
+        AstNode *child = node->first_child;
         while (child) {
             if (sp < 1024) {
                 stack[sp].node = child;
@@ -213,7 +213,14 @@ int driver_main(int argc, char **argv) {
         return 1;
     }
 
+    if (source_len >= 4 && memcmp(source, "\x7f" "ELF", 4) == 0) {
+        fprintf(stderr, "Error: '%s' appears to be a binary ELF file, not a HolyC source file\n", opts.input_file);
+        free(source);
+        return 1;
+    }
+
     Diagnostics diag = diagnostics_create();
+    diagnostics_set_active(&diag);
 
     Lexer *lexer = lexer_create(opts.input_file, source, source_len);
     lexer_set_diagnostics(lexer, &diag);

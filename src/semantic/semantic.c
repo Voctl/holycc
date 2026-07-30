@@ -82,7 +82,15 @@ static Type *semantic_resolve_type(Semantic *s, AstNode *node) {
         }
         case AST_ARRAY_TYPE: {
             Type *base = semantic_resolve_type(s, node->first_child);
-            return type_array(base, 0);
+            uint64_t length = 0;
+            AstNode *size_node = node->first_child->next;
+            if (size_node) {
+                Type *size_type = semantic_analyze_expr(s, size_node);
+                if (size_node->kind == AST_INTEGER_LITERAL)
+                    length = (uint64_t)size_node->data.int_value;
+                type_destroy(size_type);
+            }
+            return type_array(base, length);
         }
         default:
             return NULL;
@@ -199,12 +207,41 @@ static Type *semantic_analyze_expr(Semantic *s, AstNode *node) {
         }
 
         case AST_MEMBER_EXPR: {
-            semantic_analyze_expr(s, node->first_child);
+            Type *obj_type = semantic_analyze_expr(s, node->first_child);
+            AstNode *member = node->first_child->next;
+            const char *member_name = member ? member->data.string_value : NULL;
+            if (obj_type && member_name &&
+                (obj_type->kind == TYPE_STRUCT || obj_type->kind == TYPE_UNION)) {
+                StructField *f = obj_type->aggregate.fields;
+                while (f) {
+                    if (f->name && strcmp(f->name, member_name) == 0)
+                        return f->type ? f->type : type_i64();
+                    f = f->next;
+                }
+                s->diag->error(node->loc, "no member '%s' in %s", member_name,
+                               obj_type->name ? obj_type->name : "anonymous");
+                return type_i64();
+            }
             return type_i64();
         }
 
         case AST_POINTER_MEMBER_EXPR: {
-            semantic_analyze_expr(s, node->first_child);
+            Type *obj_type = semantic_analyze_expr(s, node->first_child);
+            AstNode *member = node->first_child->next;
+            const char *member_name = member ? member->data.string_value : NULL;
+            Type *deref = (obj_type && obj_type->kind == TYPE_POINTER) ? obj_type->base : NULL;
+            if (deref && member_name &&
+                (deref->kind == TYPE_STRUCT || deref->kind == TYPE_UNION)) {
+                StructField *f = deref->aggregate.fields;
+                while (f) {
+                    if (f->name && strcmp(f->name, member_name) == 0)
+                        return f->type ? f->type : type_i64();
+                    f = f->next;
+                }
+                s->diag->error(node->loc, "no member '%s' in %s", member_name,
+                               deref->name ? deref->name : "anonymous");
+                return type_i64();
+            }
             return type_i64();
         }
 
@@ -250,7 +287,7 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
                     Type *pt = semantic_resolve_type(s, ptype);
 
                     FuncParam *fp = calloc(1, sizeof(FuncParam));
-                    fp->name = pname_str ? strdup(pname_str) : strdup("");
+                    fp->name = pname_str ? strdup(pname_str) : NULL;
                     fp->type = pt;
                     *last = fp;
                     last = &fp->next;
@@ -276,7 +313,8 @@ static void semantic_analyze_stmt(Semantic *s, AstNode *node) {
 
                 FuncParam *fp = params;
                 while (fp) {
-                    symbol_add(s->symtab, fp->name, SYM_VARIABLE, fp->type, node->loc);
+                    if (fp->name)
+                        symbol_add(s->symtab, fp->name, SYM_VARIABLE, fp->type, node->loc);
                     fp = fp->next;
                 }
 

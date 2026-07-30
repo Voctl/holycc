@@ -33,6 +33,10 @@ Diagnostics diagnostics_create(void) {
     return d;
 }
 
+void diagnostics_set_active(Diagnostics *diag) {
+    active_diag = diag;
+}
+
 void diagnostics_destroy(Diagnostics *diag) {
     if (diag && diag->list) {
         for (size_t i = 0; i < diag->list->count; i++) {
