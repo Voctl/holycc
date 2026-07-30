@@ -156,6 +156,40 @@ static void codegen_emit_runtime_protos(CodeGen *cg) {
 static void codegen_emit_expr(CodeGen *cg, AstNode *node);
 static void codegen_emit_stmt(CodeGen *cg, AstNode *node);
 
+// Emit a type as a C type string (handles NAMED_TYPE, POINTER_TYPE, ARRAY_TYPE, FUNC_POINTER_TYPE)
+static void codegen_emit_type(CodeGen *cg, AstNode *type_node) {
+    if (!type_node) {
+        string_buffer_append_cstr(&cg->buf, "int");
+        return;
+    }
+    switch (type_node->kind) {
+        case AST_NAMED_TYPE:
+            string_buffer_append_cstr(&cg->buf, codegen_map_type_name(type_node->data.string_value));
+            break;
+        case AST_POINTER_TYPE: {
+            AstNode *base = type_node->first_child;
+            codegen_emit_type(cg, base);
+            string_buffer_append_cstr(&cg->buf, "*");
+            break;
+        }
+        case AST_ARRAY_TYPE: {
+            AstNode *inner = type_node;
+            while (inner && inner->kind == AST_ARRAY_TYPE)
+                inner = inner->first_child;
+            codegen_emit_type(cg, inner);
+            break;
+        }
+        case AST_FUNC_POINTER_TYPE: {
+            AstNode *ret = type_node->first_child;
+            codegen_emit_type(cg, ret);
+            break;
+        }
+        default:
+            string_buffer_append_cstr(&cg->buf, "int");
+            break;
+    }
+}
+
 // Returns true if the expression has no observable side effects.
 // Used to decide whether to wrap expression statements in (void)(...)
 // to suppress GCC -Wunused-value warnings.
@@ -415,20 +449,9 @@ static void codegen_emit_expr(CodeGen *cg, AstNode *node) {
 
   case AST_CAST_EXPR: {
     string_buffer_append_cstr(&cg->buf, "((");
-    AstNode *type_node = node->first_child;
-    if (type_node) {
-      if (type_node->kind == AST_NAMED_TYPE) {
-        codegen_emit_expr(cg, type_node);
-      } else if (type_node->kind == AST_POINTER_TYPE) {
-        AstNode *base = type_node->first_child;
-        if (base && base->kind == AST_NAMED_TYPE) {
-          string_buffer_append_cstr(&cg->buf, codegen_map_type_name(base->data.string_value));
-        }
-        string_buffer_append_cstr(&cg->buf, "*");
-      }
-    }
+    codegen_emit_type(cg, node->first_child);
     string_buffer_append_cstr(&cg->buf, ")");
-    codegen_emit_expr(cg, type_node ? type_node->next : NULL);
+    codegen_emit_expr(cg, node->first_child ? node->first_child->next : NULL);
     string_buffer_append_char(&cg->buf, ')');
     break;
   }
@@ -515,7 +538,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       child = node->first_child;
       while (child) {
         if (child->kind == AST_FUNC_DECL || child->kind == AST_STRUCT_DECL ||
-            child->kind == AST_UNION_DECL || child->kind == AST_ENUM_DECL) {
+            child->kind == AST_UNION_DECL || child->kind == AST_ENUM_DECL ||
+            child->kind == AST_VAR_DECL) {
           codegen_emit_stmt(cg, child);
         }
         child = child->next;
@@ -525,7 +549,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       child = node->first_child;
       while (child) {
         if (child->kind != AST_FUNC_DECL && child->kind != AST_STRUCT_DECL &&
-            child->kind != AST_UNION_DECL && child->kind != AST_ENUM_DECL) {
+            child->kind != AST_UNION_DECL && child->kind != AST_ENUM_DECL &&
+            child->kind != AST_VAR_DECL) {
           codegen_emit_indent(cg);
           codegen_emit_stmt(cg, child);
         }
@@ -550,13 +575,16 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
 
     string_buffer_append_char(&cg->buf, '\n');
 
-    if (type_node && type_node->kind == AST_NAMED_TYPE) {
+    if (node->flags & AST_FLAG_EXTERN) {
+      string_buffer_append_cstr(&cg->buf, "extern ");
+    }
+
+    if (type_node) {
       const char *name_str = name_node ? name_node->data.string_value : NULL;
       if (name_str && strcmp(name_str, "main") == 0) {
         string_buffer_append_cstr(&cg->buf, "int");
       } else {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(type_node->data.string_value));
+        codegen_emit_type(cg, type_node);
       }
     }
 
@@ -572,9 +600,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       AstNode *ptype = child->first_child;
       AstNode *pname = ptype ? ptype->next : NULL;
 
-      if (ptype && ptype->kind == AST_NAMED_TYPE) {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(ptype->data.string_value));
+      if (ptype) {
+        codegen_emit_type(cg, ptype);
         string_buffer_append_char(&cg->buf, ' ');
       }
       if (pname) {
@@ -600,7 +627,7 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
           last_param = p;
           p = p->next;
         }
-        if (last_param) {
+        if (last_param && last_param->first_child) {
           AstNode *pname = last_param->first_child->next;
           const char *last_name = (pname && pname->kind == AST_IDENTIFIER)
                                       ? pname->data.string_value
@@ -658,23 +685,20 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
 
     if (type_node && type_node->kind == AST_FUNC_POINTER_TYPE) {
       AstNode *return_type = type_node->first_child;
-      AstNode *fp_name = return_type ? return_type->next : NULL;
-      if (return_type && return_type->kind == AST_NAMED_TYPE) {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(return_type->data.string_value));
+      if (return_type) {
+        codegen_emit_type(cg, return_type);
       }
       string_buffer_append_cstr(&cg->buf, " (*");
-      codegen_emit_expr(cg, fp_name);
+      codegen_emit_expr(cg, name_node);
       string_buffer_append_cstr(&cg->buf, ")(");
-      AstNode *param = fp_name ? fp_name->next : NULL;
+      AstNode *param = return_type ? return_type->next : NULL;
       bool first_param = true;
       while (param && param->kind == AST_FUNC_PARAM) {
         if (!first_param)
           string_buffer_append_cstr(&cg->buf, ", ");
         AstNode *ptype = param->first_child;
-        if (ptype && ptype->kind == AST_NAMED_TYPE) {
-          string_buffer_append_cstr(
-              &cg->buf, codegen_map_type_name(ptype->data.string_value));
+        if (ptype) {
+          codegen_emit_type(cg, ptype);
         }
         first_param = false;
         param = param->next;
@@ -684,25 +708,9 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       string_buffer_append_cstr(
           &cg->buf, codegen_map_type_name(type_node->data.string_value));
       string_buffer_append_char(&cg->buf, ' ');
-    } else if (type_node && type_node->kind == AST_POINTER_TYPE) {
-      AstNode *base = type_node->first_child;
-      if (base && base->kind == AST_NAMED_TYPE) {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(base->data.string_value));
-        string_buffer_append_char(&cg->buf, ' ');
-      }
-      string_buffer_append_cstr(&cg->buf, "*");
-    } else if (type_node && type_node->kind == AST_ARRAY_TYPE) {
-      AstNode *elem_type = type_node->first_child;
-      while (elem_type && elem_type->kind == AST_ARRAY_TYPE) {
-        elem_type = elem_type->first_child;
-      }
-      if (elem_type && elem_type->kind == AST_NAMED_TYPE) {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(elem_type->data.string_value));
-      } else {
-        string_buffer_append_cstr(&cg->buf, "int");
-      }
+    } else if (type_node && (type_node->kind == AST_POINTER_TYPE ||
+               type_node->kind == AST_ARRAY_TYPE)) {
+      codegen_emit_type(cg, type_node);
       string_buffer_append_char(&cg->buf, ' ');
     }
 
@@ -794,8 +802,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
         AstNode *type_node = init->first_child;
         AstNode *name_node = type_node ? type_node->next : NULL;
         AstNode *var_init = name_node ? name_node->next : NULL;
-        if (type_node && type_node->kind == AST_NAMED_TYPE) {
-          string_buffer_append_cstr(&cg->buf, codegen_map_type_name(type_node->data.string_value));
+        if (type_node) {
+          codegen_emit_type(cg, type_node);
           string_buffer_append_char(&cg->buf, ' ');
         }
         codegen_emit_expr(cg, name_node);
@@ -964,9 +972,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
       codegen_emit_indent(cg);
       AstNode *ftype = iter->first_child;
       AstNode *fname = ftype ? ftype->next : NULL;
-      if (ftype && ftype->kind == AST_NAMED_TYPE) {
-        string_buffer_append_cstr(
-            &cg->buf, codegen_map_type_name(ftype->data.string_value));
+      if (ftype) {
+        codegen_emit_type(cg, ftype);
         string_buffer_append_char(&cg->buf, ' ');
       }
       codegen_emit_expr(cg, fname);
@@ -987,7 +994,7 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
     while (iter) {
       if (iter->kind == AST_FUNC_DECL) {
         AstNode *t = iter->first_child;
-        if (!t || t->kind != AST_NAMED_TYPE) {
+        if (!t) {
           iter = iter->next;
           continue;
         }
@@ -996,9 +1003,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
           iter = iter->next;
           continue;
         }
-        const char *ret_type = t->data.string_value;
         const char *mname = n->data.string_value;
-        string_buffer_append_cstr(&cg->buf, codegen_map_type_name(ret_type));
+        codegen_emit_type(cg, t);
         string_buffer_append_char(&cg->buf, ' ');
         if (class_name) {
           string_buffer_append_cstr(&cg->buf, class_name);
@@ -1015,9 +1021,8 @@ static void codegen_emit_stmt(CodeGen *cg, AstNode *node) {
           string_buffer_append_cstr(&cg->buf, ", ");
           AstNode *ptype = param->first_child;
           AstNode *pname = ptype ? ptype->next : NULL;
-          if (ptype && ptype->kind == AST_NAMED_TYPE) {
-            string_buffer_append_cstr(
-                &cg->buf, codegen_map_type_name(ptype->data.string_value));
+          if (ptype) {
+            codegen_emit_type(cg, ptype);
             string_buffer_append_char(&cg->buf, ' ');
           }
           if (pname)
