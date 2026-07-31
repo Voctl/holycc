@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Every tree starts as a seed... or a segfault.
 // Allocate a new AST node (zero-initialised)
 AstNode *ast_node_create(AstKind kind, SourceLocation loc) {
     AstNode *node = calloc(1, sizeof(AstNode));
