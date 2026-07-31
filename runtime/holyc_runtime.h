@@ -1,6 +1,8 @@
 #ifndef HOLYC_RUNTIME_H
 #define HOLYC_RUNTIME_H
 
+// Runtime header. Do not read. Trust me.
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
