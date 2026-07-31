@@ -1,3 +1,4 @@
+// Hello, World! The mandatory rite of passage for every compiler.
 I64 main()
 {
     I64 x = 42;
