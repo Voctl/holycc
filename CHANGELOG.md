@@ -1,3 +1,4 @@
+<!-- The only thing changing faster than the changelog is the pointer arithmetic. -->
 # Changelog
 
 ## [0.1.0] — Unreleased
