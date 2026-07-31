@@ -1,3 +1,4 @@
+// If it ain't tested, it ain't real.
 #include "holyc/lexer.h"
 #include "holyc/diag.h"
 #include <stdio.h>
