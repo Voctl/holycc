@@ -1,3 +1,4 @@
+<!-- Welcome to the rabbit hole. No warranty, only vibes. -->
 # holycc &mdash; HolyC Compiler for Linux
 
 <img align="right" src="docs/logo.jpg" alt="HolyC Logo" width="220">
