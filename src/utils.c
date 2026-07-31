@@ -1,3 +1,4 @@
+// Utility functions: the unsung heroes of every codebase.
 // String buffer and file I/O utilities
 #include "holyc/utils.h"
 #include <stdio.h>
