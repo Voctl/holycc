@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Today's C is tomorrow's machine code. Mind blown.
+
 typedef struct FuncNameNode {
   char *name;
   struct FuncNameNode *next;
