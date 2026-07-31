@@ -1,3 +1,4 @@
+// Symbols: because globals are a terrible party crasher.
 // Symbol table – scope management and symbol lookup
 #include "holyc/symbol.h"
 #include <stdlib.h>
