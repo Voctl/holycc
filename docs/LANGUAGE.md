@@ -1,3 +1,4 @@
+<!-- If it doesn't compile, it's a you problem. ... or a bug. Probably a bug. -->
 # HolyC Language Reference
 
 **HolyC** is the systems programming language created by **Terry A. Davis**
