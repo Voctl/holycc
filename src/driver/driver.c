@@ -1,3 +1,4 @@
+// Hold the wheel. We're driving straight into UB.
 // CLI driver – orchestration of lexer, parser, semantic, codegen, and GCC
 #include "holyc/driver.h"
 #include "holyc/lexer.h"
