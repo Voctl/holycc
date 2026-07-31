@@ -1,3 +1,4 @@
+// Runtime: where the magic (and the segfaults) happen.
 #include "holyc_runtime.h"
 #include <stdio.h>
 #include <stdlib.h>
