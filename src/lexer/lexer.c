@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
+// Chop the source into tokens like a karate master on espresso.
+
 // Keyword lookup entry — maps source text to a token kind
 typedef struct {
     const char *keyword;
