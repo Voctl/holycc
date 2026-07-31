@@ -1,3 +1,4 @@
+// Grammar? We don't make the rules, we just enforce them violently.
 #include "holyc/parser.h"
 #include "holyc/utils.h"
 #include <stdio.h>
