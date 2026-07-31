@@ -1,3 +1,4 @@
+// Type my problems, not my types.
 #include "holyc/types.h"
 #include <stdio.h>
 #include <stdlib.h>
