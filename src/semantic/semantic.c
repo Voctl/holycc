@@ -3,6 +3,7 @@
 #include <string.h>
 
 // Semantic analyser state — symbol table, current context, nesting depth
+// It type-checks at compile time so your runtime doesn't have to.
 struct Semantic {
     SymbolTable *symtab;
     Diagnostics *diag;
