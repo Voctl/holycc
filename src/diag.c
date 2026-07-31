@@ -1,3 +1,4 @@
+// Error messages: where compassion meets compiler.
 // Diagnostics – error/warning/note emission and formatted output
 #include "holyc/diag.h"
 #include <stdio.h>
