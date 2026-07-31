@@ -1,3 +1,4 @@
+<!-- Architecture: like legos, but if you step on it, it segfaults. -->
 # holycc Architecture
 
 ## Overview
